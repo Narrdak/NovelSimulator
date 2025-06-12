@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>월천킥 작가 시뮬레이터! Beta 3.1</title>
+    <!-- 외부 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <!-- 분리된 CSS 파일 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-wrapper">
+        <div class="container">
+            <!-- 설정 화면 -->
+            <div id="setup-screen">
+                <h1>월천킥 작가 시뮬레이터! Beta 3.1</h1>
+                <div class="form-group">
+                    <label for="novel-title">작품 제목</label>
+                    <input type="text" id="novel-title" placeholder="나만의 웹소설 제목을 지어주세요">
+                </div>
+                <div class="form-group">
+                    <label for="author-name">작가명</label>
+                    <input type="text" id="author-name" placeholder="필명을 입력해주세요">
+                </div>
+                <div class="form-group">
+                    <label for="novel-synopsis">소개글</label>
+                    <textarea id="novel-synopsis" placeholder="독자들의 마음을 사로잡을 소개글을 작성해보세요"></textarea>
+                </div>
+                <div class="form-group"><label>메인 태그 (1개 선택)</label><div id="main-tags-container" class="tag-container"></div></div>
+                <div class="form-group"><label>서브 태그 (최대 6개 선택)</label><div id="sub-tags-container" class="tag-container"></div><p id="sub-tag-limit-msg"></p></div>
+                <button id="start-button">연재 시작!</button>
+            </div>
+
+            <!-- 시뮬레이션 화면 -->
+            <div id="simulation-screen">
+                <h2 id="novel-title-display"></h2>
+                <p id="author-name-display"></p>
+                <p id="novel-tags-display"></p>
+                <p id="novel-synopsis-display"></p>
+                <div class="earnings-info-bar">
+                    <span id="writing-time-per-chapter"></span>
+                    <span id="current-earnings"></span>
+                    <span id="current-hourly-wage"></span>
+                </div>
+                <div class="speed-control-bar">
+                    <button id="speed-1x" class="speed-button active">1배속</button>
+                    <button id="speed-1_5x" class="speed-button">1.5배속</button>
+                    <button id="speed-2x" class="speed-button">2배속</button>
+                    <button id="speed-4x" class="speed-button">4배속</button>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-box"><div class="label">현재 화수</div><div id="current-chapter" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">최신화 조회수</div><div id="latest-chapter-views" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">하이프 지수</div><div id="hype-meter" class="value">100%</div></div>
+                    <div class="stat-box"><div class="label">총 선호작</div><div id="total-favorites" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">총 알림</div><div id="total-recommendations" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">총 조회수</div><div id="total-views" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">최고 최신화 조회수</div><div id="peak-latest-views" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">최고 일일 조회수</div><div id="peak-daily-growth" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">실시간 랭킹</div><div id="realtime-ranking" class="value">순위권 밖</div></div>
+                    <div class="stat-box"><div class="label">최고 실시간 랭킹</div><div id="peak-realtime-ranking" class="value">순위권 밖</div></div>
+                </div>
+
+                <div>
+                    <h3 class="section-title">현재 에피소드 진행도</h3>
+                    <div id="narrative-progress-container">
+                        <div id="narrative-progress-bar">
+                            <div id="narrative-progress-fill"></div>
+                            <span id="narrative-status-text"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-row">
+                    <div class="chart-wrapper"><h3 class="chart-title">최신화 조회수 추이</h3><canvas id="latest-views-trend-chart"></canvas></div>
+                    <div class="chart-wrapper"><h3 class="chart-title">일자별 조회수 증가량</h3><canvas id="daily-growth-chart"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <div id="log-sidebar"><h3>타임라인</h3><div id="timeline-log"></div></div>
+    </div>
+
+    <!-- 선택형 이벤트 모달 -->
+    <div id="choice-event-modal" class="modal" style="z-index: 1001;">
+        <div class="modal-content" style="max-width: 550px;">
+            <h2 id="choice-event-title" style="color: var(--primary-color);"></h2>
+            <p id="choice-event-description" style="font-size: 1.05em; line-height: 1.6; color: var(--subtext-color); margin-bottom: 25px;"></p>
+            <div id="choice-event-options"></div>
+            <div id="choice-event-result" style="display: none; margin-top: 20px;">
+                <p id="choice-event-result-text" style="background-color: var(--widget-bg-alt); padding: 15px; border-radius: 8px;"></p>
+                <button id="choice-event-confirm-button">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 결과 모달 -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="result-title"></h2>
+            <h3 id="final-author-name"></h3>
+            <p id="end-reason"></p>
+            <p id="final-novel-synopsis"></p>
+            <div class="result-section">
+                <h3><i class="fa-solid fa-chart-line"></i> 최종 성과</h3>
+                <div class="result-grid">
+                    <div class="result-item"><i class="fa-solid fa-eye"></i><div class="text-content"><span class="label">총 조회수</span><span id="final-total-views" class="value"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-star"></i><div class="text-content"><span class="label">총 선호작</span><span id="final-total-favorites" class="value"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-trophy"></i><div class="text-content"><span class="label">최고 실시간 랭킹</span><span id="final-peak-ranking" class="value"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-arrow-trend-up"></i><div class="text-content"><span class="label">최고 일일 조회수</span><span id="final-peak-daily-growth" class="value"></span></div></div>
+                </div>
+            </div>
+            <div class="result-section">
+                <h3><i class="fa-solid fa-coins"></i> 수익 정산</h3>
+                <div class="result-grid">
+                    <div class="result-item"><i class="fa-solid fa-sack-dollar"></i><div class="text-content"><span class="label">총 수익</span><span id="final-earnings" class="value currency"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-clock"></i><div class="text-content"><span class="label">시급</span><span id="final-hourly-wage" class="value currency"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-calendar-days"></i><div class="text-content"><span class="label">월급 환산</span><span id="final-monthly-wage" class="value currency"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-pencil"></i><div class="text-content"><span class="label">총 집필 시간</span><span id="final-writing-time" class="value"></span></div></div>
+                </div>
+            </div>
+            <div class="result-section">
+                <h3><i class="fa-solid fa-book-open-reader"></i> 연재 기록</h3>
+                <div class="result-grid">
+                    <div class="result-item"><i class="fa-solid fa-bolt"></i><div class="text-content"><span class="label">총 이벤트 발생 수</span><span id="final-total-events" class="value"></span></div></div>
+                     <div class="result-item"><i class="fa-solid fa-face-smile"></i><div class="text-content"><span class="label">긍정적 댓글</span><span id="final-positive-comments" class="value"></span></div></div>
+                     <div class="result-item"><i class="fa-solid fa-face-frown"></i><div class="text-content"><span class="label">부정적 댓글</span><span id="final-negative-comments" class="value"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-bell"></i><div class="text-content"><span class="label">총 알림</span><span id="final-total-recommendations" class="value"></span></div></div>
+                </div>
+            </div>
+            <div class="result-section">
+                <h3><i class="fa-solid fa-medal"></i> 달성 업적</h3>
+                <div id="achievements-list"></div>
+            </div>
+            <div id="modal-buttons">
+                <button id="close-modal-button">확인</button>
+                <button id="restart-button">다시하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 실행 스크립트 (모듈로 로드) -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

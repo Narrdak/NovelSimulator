@@ -5,10 +5,25 @@
  *       다른 모든 모듈이 이 파일의 gameState를 공유하여 작동합니다.
  */
 
-// 게임의 모든 상태를 담는 객체
+import { loadGameData, saveGameData as saveToStorage } from './storage-manager.js';
+
+export let AppData = {
+    authors: [],
+    gameSettings: {
+        lastPlayedAuthorId: null,
+    },
+};
+
+export function initializeAppData() {
+    AppData = loadGameData();
+}
+
+export function saveAppData() {
+    saveToStorage(AppData);
+}
+
 export let gameState = {};
 
-// 게임의 핵심 설정값
 export const config = {
     BASE_RETENTION_RATE: 0.96,
     MAX_CHART_ITEMS: 15,
@@ -16,34 +31,13 @@ export const config = {
     BASE_CHAPTER_INTERVAL: 5000,
 };
 
-// 게임 루프 인터벌 ID (일시정지/재개를 위해 필요)
-export let tickIntervalId;
-export let chapterIntervalId;
-
-/**
- * 인터벌 ID를 설정하는 함수
- * @param {number} tickId - setInterval의 tick ID
- * @param {number} chapterId - setInterval의 chapter ID
- */
-export function setLoopIds(tickId, chapterId) {
-    tickIntervalId = tickId;
-    chapterIntervalId = chapterId;
-}
-
-/**
- * gameState 객체를 새로운 상태로 교체합니다.
- * @param {object} newState - 새로운 gameState 객체
- */
 export function setGameState(newState) {
     gameState = newState;
 }
 
-/**
- * 게임의 초기 상태 객체를 반환하는 함수.
- * @returns {object} 초기화된 gameState 객체
- */
-export function getInitialGameState() {
+export function getInitialGameState(author = null) {
     return {
+        startDate: null, 
         isPaused: false,
         isRunning: false,
         novelTitle: '',
@@ -60,7 +54,7 @@ export function getInitialGameState() {
         activeEvents: [],
         readersReachedLatest: 0,
         chapterViews: [],
-        date: new Date(2024, 0, 1),
+        date: author ? new Date(author.stats.currentDate) : new Date(2024, 0, 1),
         previousTotalViews: 0,
         dailyGrowthChartLabels: [],
         dailyGrowthChartData: [],
@@ -82,7 +76,28 @@ export function getInitialGameState() {
         negativeCommentsCount: 0,
         currentTrendTags: [],
         trendBonus: 1.0,
-        extraEarnings: 0
+        extraEarnings: 0,
+        retentionRateModifier: 1.0,
+        inflowMultiplierModifier: 1.0,
+        favoriteRateModifier: 1.0,
+        initialMoney: author ? author.stats.money : 0, 
+        lastTickTotalViews: 0, 
+        currentAuthor: author,
+        // [신규 추가] UI 표시용 현재 연독률 및 충성 독자 수
+        displayRetentionRate: 0,
+        loyalReaders: 0,
+        previousScreenId: 'work-list-screen', // 플레이어의 휴식 상태
+        latestChapterHype: 1.0, // 최신화 성과 지수 (1.0이 기준)
+        poorPerformanceStreak: 0, // 저조한 성적이 연속으로 이어진 횟수
+        // [신규 추가] 강제 휴재 및 유료화 상태 관리
+        isForcedRest: false,       // 강제 휴재 상태 여부
+        forcedRestTicks: 0,        // 강제 휴재가 지속된 틱 수
+        revenueModel: 'free',      // 유료화 전환 여부
+        currentTrend: {
+            main: null,      // 이달의 메인 트렌드 태그
+            subs: [],        // 이달의 서브 트렌드 태그 (5개)
+            lastUpdated: -1, // 마지막으로 업데이트된 월(month)을 저장 (0~11)
+        },
+        previousScreenId: 'work-list-screen'
     };
 }
-// --- END OF FILE state.js ---

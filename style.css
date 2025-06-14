@@ -22,7 +22,8 @@ body {
     background-color: var(--light-bg);
     color: var(--text-color);
     margin: 0;
-    padding: 20px;
+    /* [수정] 고정 헤더를 위한 상단 패딩 추가 */
+    padding: 120px 20px 20px 20px;
     box-sizing: border-box;
 }
 
@@ -65,18 +66,18 @@ h3.chart-title, h3.section-title {
 }
 
 /* 설정 화면 스타일 */
-#setup-screen .form-group {
+#work-creation-screen .form-group {
     margin-bottom: 25px;
 }
-#setup-screen label {
+#work-creation-screen label {
     display: block;
     font-weight: 700;
     margin-bottom: 10px;
     color: var(--subtext-color);
     font-size: 1.05em;
 }
-#setup-screen input[type="text"],
-#setup-screen textarea { /* 소개글 필드 추가 */
+#work-creation-screen input[type="text"],
+#work-creation-screen textarea { /* 소개글 필드 추가 */
     width: 100%;
     padding: 12px 15px;
     border: 1px solid var(--border-color);
@@ -87,26 +88,26 @@ h3.chart-title, h3.section-title {
     font-size: 1em;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
-#setup-screen textarea {
+#work-creation-screen textarea {
     min-height: 100px;
     resize: vertical;
 }
-#setup-screen input[type="text"]:focus,
-#setup-screen textarea:focus {
+#work-creation-screen input[type="text"]:focus,
+#work-creation-screen textarea:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(79, 109, 255, 0.3);
 }
 
-#setup-screen .tag-container {
+#work-creation-screen .tag-container {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
 }
-#setup-screen .tag-item input {
+#work-creation-screen .tag-item input {
     display: none;
 }
-#setup-screen .tag-item label {
+#work-creation-screen .tag-item label {
     display: block;
     padding: 8px 15px;
     border: 1px solid var(--border-color);
@@ -117,11 +118,24 @@ h3.chart-title, h3.section-title {
     font-weight: 500;
     background-color: var(--widget-bg-alt);
 }
-#setup-screen .tag-item input:checked + label {
+#work-creation-screen .tag-item input:checked + label {
     background-color: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
     font-weight: 700;
+}
+
+#work-creation-screen .tag-category-wrapper {
+    margin-bottom: 25px; /* 카테고리 간의 간격 */
+}
+
+#work-creation-screen .tag-category-title {
+    font-size: 1.1em;
+    color: var(--primary-color);
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
 }
 
 #start-button {
@@ -299,38 +313,53 @@ h3.chart-title, h3.section-title {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
 
+/* [수정] 사이드바 스타일 간소화 */
 #log-sidebar {
-    flex-shrink: 0;
-    width: 350px;
-    height: calc(100vh - 40px);
+    width: 320px;
+    min-width: 280px;
+    flex-shrink: 0; /* 사이드바가 찌그러지지 않도록 설정 */
     background: var(--widget-bg);
-    padding: 25px;
     border-radius: 16px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
     border: 1px solid var(--border-color);
-    overflow-y: auto;
-    position: sticky;
-    top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-self: flex-start; /* 컨텐츠 높이에 맞게 */
 }
-#log-sidebar h3 {
-    margin-top: 0;
-    color: #e0e0e0;
+
+#sidebar-author-info-placeholder, #sidebar-actions {
+    margin-bottom: 15px;
 }
+
+#sidebar-actions button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+
 .log-entry {
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-color);
-    opacity: 0.9;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    border-left: 3px solid var(--border-color);
+}
+.log-entry:last-child {
+    margin-bottom: 0;
 }
 .log-meta {
-    font-size: .8em;
+    font-size: .75em;
     color: var(--subtext-color);
-    margin: 0 0 5px 0;
+    margin: 0 0 4px 0;
 }
 .log-text {
     margin: 0;
-    font-size: .95em;
-    line-height: 1.5;
+    font-size: .9em;
+    line-height: 1.4;
 }
 .log-text.event { font-weight: 700; color: var(--primary-color); }
 .log-text.climax-comment { font-weight: 700; color: var(--climax-color); }
@@ -453,12 +482,676 @@ h3.chart-title, h3.section-title {
 .chart-row { display: flex; gap: 20px; margin-top: 20px; }
 .chart-wrapper { flex: 1; min-width: 0; background: var(--widget-bg-alt); padding: 15px; border-radius: 12px; }
 
+@media (max-width: 1200px) {
+    #global-header {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 15px;
+        height: auto;
+    }
+    #header-core-stats {
+       flex-grow: 1;
+    }
+    body {
+        padding-top: 180px; /* 늘어난 헤더 높이에 맞게 조정 */
+    }
+}
+
+
 @media (max-width: 768px) {
-    body { padding: 10px; }
+    body { padding: 10px; padding-top: 160px; }
     #app-wrapper { flex-direction: column }
-    #log-sidebar { width: 100%; height: 300px; margin-top: 20px; position: static; }
+    #log-sidebar { width: 100%; height: auto; max-height: 300px; margin-top: 20px; position: static; }
     .chart-row { flex-direction: column }
     .result-grid { grid-template-columns: 1fr; }
     .container { padding: 20px; }
+    #header-author-profile {
+        width: 100%;
+        justify-content: center;
+    }
 }
-/* --- END OF FILE style.css --- */
+
+/* --- Phase 2 CSS --- */
+/* 화면 전환을 위한 기본 스타일 */
+#author-screen, #work-list-screen, #work-creation-screen, #simulation-screen {
+    display: none; /* JS로 제어 */
+}
+
+/* 버튼 공용 스타일 */
+.btn-primary, .btn-secondary, .btn-success {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 700;
+    color: white;
+}
+.btn-primary { background: var(--primary-color); }
+.btn-primary:hover { background-color: #3d5bf0; }
+.btn-secondary { background: var(--system-color); }
+.btn-secondary:hover { background: #819092; }
+.btn-success { background: var(--green-color); }
+.btn-success:hover { background: #27ae60; }
+
+
+/* 작가/작품 목록 공통 스타일 */
+.list-container {
+    margin-top: 20px;
+    margin-bottom: 30px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+.list-item {
+    background-color: var(--widget-bg-alt);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.list-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    border-color: var(--primary-color);
+}
+
+/* 작가 목록 스타일 */
+.author-item img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--border-color);
+}
+.author-info h3 {
+    margin: 0 0 5px 0;
+    text-align: left;
+    color: var(--text-color);
+}
+.author-info p {
+    margin: 0;
+    color: var(--subtext-color);
+    font-size: 0.95em;
+}
+
+/* 작품 목록 화면 헤더 */
+#work-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background-color: var(--widget-bg-alt);
+    padding: 15px;
+    border-radius: 12px;
+}
+.author-profile-summary {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.author-profile-summary img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+}
+.author-profile-summary h2 { margin: 0; text-align: left; }
+.author-profile-summary p { margin: 0; color: var(--subtext-color); }
+
+/* 작품 목록 스타일 */
+.work-item {
+    justify-content: space-between;
+}
+.work-info h3 { text-align: left; margin: 0; }
+.work-info .work-tags { font-size: 0.9em; color: var(--primary-color); margin: 5px 0; }
+.work-info .work-end-reason { font-size: 0.9em; color: var(--subtext-color); margin: 5px 0 0 0; }
+.work-stats { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; font-size: 0.95em; }
+.work-stats span { display: flex; align-items: center; gap: 8px; }
+.work-stats i { color: var(--primary-color); }
+
+/* 작가 생성 폼 */
+.form-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+#profile-image-presets {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+.profile-preset {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color .2s;
+}
+.profile-preset:hover {
+    border-color: var(--primary-color);
+}
+.profile-preset.selected {
+    border-color: var(--green-color);
+    box-shadow: 0 0 10px var(--green-color);
+}
+
+/* 리더보드 모달 스타일 */
+#leaderboard-list {
+    margin: 20px 0;
+    text-align: left;
+}
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background-color: var(--widget-bg-alt);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.leaderboard-item .rank {
+    font-size: 1.5em;
+    font-weight: 700;
+    width: 40px;
+    text-align: center;
+    color: var(--primary-color);
+}
+.leaderboard-item .info {
+    flex-grow: 1;
+}
+.leaderboard-item .info .title {
+    display: block;
+    font-weight: 700;
+    font-size: 1.1em;
+}
+.leaderboard-item .info .author {
+    font-size: 0.9em;
+    color: var(--subtext-color);
+}
+.leaderboard-item .earning {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--green-color);
+}
+
+#author-screen input[type="text"],
+#author-screen textarea,
+#author-screen input[type="file"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-sizing: border-box;
+    background-color: var(--light-bg);
+    color: var(--text-color);
+    font-size: 1em;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    margin-bottom: 10px;
+}
+#author-screen textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+#author-screen input[type="text"]:focus,
+#author-screen textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 109, 255, 0.3);
+}
+#author-screen label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--subtext-color);
+    font-size: 1.05em;
+}
+#author-screen .btn-primary,
+#author-screen .btn-secondary,
+#author-screen .btn-success {
+    width: auto;
+    margin-right: 8px;
+    margin-top: 10px;
+}
+/* --- END OF Phase 2 CSS --- */
+
+/* --- [수정] Phase 4: 글로벌 헤더 스타일 --- */
+#global-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: var(--widget-bg);
+    padding: 15px 30px;
+    display: flex;
+    flex-wrap: wrap; /* 창이 좁아지면 줄바꿈 허용 */
+    align-items: center;
+    justify-content: space-between; /* 양쪽 끝으로 정렬 */
+    gap: 15px 30px; /* 세로 간격, 가로 간격 */
+    border-bottom: 2px solid var(--border-color);
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.2);
+    box-sizing: border-box;
+    min-height: 100px;
+}
+
+#header-author-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
+    flex-grow: 1; /* 남는 공간을 차지하려 시도 */
+    min-width: 200px;
+    max-width: 300px;
+}
+
+#header-author-img {
+    width: 100px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+}
+
+.profile-text-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+#header-author-name-level {
+    
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+#header-author-name-level .level-badge {
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--subtext-color);
+}
+
+.date-money-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--subtext-color);
+    flex-shrink: 0; /* 찌그러지지 않도록 */
+    text-align: right;
+}
+
+.date-money-info i {
+    margin-right: 8px;
+    color: var(--primary-color);
+}
+
+#header-money span {
+    color: var(--green-color);
+}
+
+#header-stats-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-grow: 1;
+    margin-top: 5px; /* 줄바꿈 시 상단 여백 */
+}
+
+#header-main-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 180px;
+    max-width: 250px; /* [수정] 프로그레스 바 최대 너비 제한 */
+    flex-grow: 1;
+}
+
+#header-sub-stats {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 6px 15px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.header-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.header-stat-item i {
+    color: var(--primary-color);
+    width: 14px;
+    text-align: center;
+}
+
+.header-stat-item .stat-title {
+    color: var(--subtext-color);
+}
+
+/* --- END OF Phase 4 CSS --- */
+
+/* Main screen intro */
+#main-screen {display:flex;justify-content:center;align-items:center;min-height:500px;}
+#intro-wrapper{text-align:center;width:100%;}
+#intro-title-img{max-width:300px;margin-bottom:20px;}
+#intro-description{font-size:1.15em;color:var(--subtext-color);margin-bottom:15px;line-height:1.6;}
+#patch-notes{background:var(--widget-bg-alt);padding:15px;border-radius:10px;display:inline-block;text-align:left;width:100%;max-width:500px;margin:0 auto;}
+#patch-notes h3{text-align:left;margin-top:0;color:var(--primary-color);}
+
+/* sidebar timeline */
+.timeline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+.timeline-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+    color: var(--text-color);
+}
+.toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: transform .2s;
+}
+.toggle-btn.collapsed {
+    transform: rotate(-90deg);
+} 
+#timeline-log {
+    max-height: 500px; 
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* Stat progress bars (공용) */
+.stats-container {
+    margin: 10px 0;
+    width: 100%;
+    max-width: 800px;
+}
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.stat-row i {
+    color: var(--primary-color);
+    width: 16px;
+    text-align: center;
+    font-size: 0.9em;
+}
+.stat-name {
+    font-size: 0.9em;
+    color: var(--subtext-color);
+    min-width: 40px;
+}
+.stat-bar {
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    height: 20px;
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+.stat-bar-fill {
+    background: var(--primary-color);
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+    
+}
+.stat-value-inside {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.85em;
+    font-weight: 600;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.money-display {
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(44, 62, 80, 0.13);
+    border-radius: 8px;
+}
+.money-display i {
+    color: #f1c40f;
+    margin-right: 8px;
+}
+
+/* work-item 내부에 자식 요소를 절대 위치로 배치하기 위함 */
+.work-item {
+    position: relative; 
+    justify-content: space-between;
+}
+
+/* 삭제 버튼 스타일 */
+.btn-delete-work {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: var(--subtext-color);
+    font-size: 1.5em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+}
+.btn-delete-work:hover {
+    color: var(--red-color);
+}
+
+.author-item {
+    position: relative;
+}
+
+/* 연재 기간 정보 스타일 */
+.work-date-info {
+    font-size: 0.85em;
+    color: var(--subtext-color);
+    margin-top: 8px;
+}
+.work-date-info i {
+    margin-right: 5px;
+}
+
+#rest-options-container button {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    font-size: 1.05em;
+}
+#rest-options-container button i {
+    width: 20px;
+    text-align: center;
+}
+
+#hub-actions-container .btn-primary,
+#hub-actions-container .btn-secondary {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+
+/* --- 작가 허브 화면 스타일 수정 및 추가 --- */
+
+/* 1. 활동 메뉴 버튼 간격 조정 */
+#hub-actions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* 버튼 사이의 수직 간격을 줍니다. */
+}
+#hub-actions-container .btn-primary,
+#hub-actions-container .btn-secondary {
+    width: 100%;
+    margin: 0; /* 기존 마진이 있다면 제거하여 gap으로만 제어 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 2. 작가 거주 환경 패널 스타일 */
+#environment-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* 아이템 사이의 간격 */
+}
+
+.environment-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: var(--widget-bg-alt);
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.environment-item i {
+    font-size: 1.8em;
+    color: var(--primary-color);
+    width: 30px;
+    text-align: center;
+}
+
+.item-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.item-name {
+    font-weight: 700;
+    color: var(--text-color);
+    font-size: 1.05em;
+}
+
+.item-status {
+    font-size: 0.9em;
+    color: var(--subtext-color);
+}
+
+.btn-upgrade {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: 600;
+}
+.btn-upgrade:hover {
+    background-color: #3d5bf0;
+}
+
+/* '여자친구' 항목 특별 스타일 */
+.girlfriend-item .girlfriend-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-color);
+}
+
+/* --- 모달 버튼 스타일 통일성 확보 --- */
+#close-upgrade-modal-button {
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 700;
+    background: var(--system-color);
+    color: white;
+    border: none;
+}
+#close-upgrade-modal-button:hover {
+    background: #819092;
+}
+
+.upgrade-comparison {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 0;
+    text-align: center;
+}
+.upgrade-col {
+    flex: 1;
+    background-color: var(--widget-bg-alt);
+    padding: 15px;
+    border-radius: 8px;
+}
+.upgrade-col h4 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+.upgrade-item-name {
+    font-weight: 700;
+    font-size: 1.1em;
+}
+.upgrade-item-desc {
+    font-size: 0.9em;
+    color: var(--subtext-color);
+    min-height: 40px;
+}
+.upgrade-arrow {
+    font-size: 2em;
+    color: var(--primary-color);
+}
+.upgrade-cost {
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+.upgrade-cost.insufficient {
+    color: var(--red-color);
+}
+#upgrade-confirm-button {
+    width: 100%;
+}
+#upgrade-confirm-button:disabled {
+    background-color: var(--system-color);
+    cursor: not-allowed;
+}

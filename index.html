@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>월천킥 작가 시뮬레이터! Beta 3.1</title>
+    <title>월천킥 작가 시뮬레이터! Beta 4.0</title>
     <!-- 외부 라이브러리 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
@@ -11,18 +11,90 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- [수정] 고정 글로벌 헤더 -->
+    <div id="global-header" style="display: none;">
+        <!-- 왼쪽: 작가 프로필 -->
+        <div id="header-author-profile">
+            <img id="header-author-img" src="./asset/image/profile_placeholder.png" alt="작가 프로필">
+            <div class="profile-text-info">
+                <div id="header-author-name-level"><!-- JS --></div>
+                <div class="stat-row">
+                    <i class="fa-solid fa-star"></i>
+                    <div class="stat-bar">
+                        <div id="header-exp-bar-fill" class="stat-bar-fill"></div>
+                        <span id="header-exp-value" class="stat-value-inside"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [수정] 중앙 정보 전체 래퍼 제거, 각 요소를 헤더의 직계 자식으로 변경 -->
+<div class="date-money-info">
+    <div id="header-date"><i class="fa-solid fa-calendar-alt"></i> <span></span></div>
+    <div id="header-money"><i class="fa-solid fa-coins"></i> <span></span></div>
+</div>
+<div id="header-stats-container">
+    <div id="header-main-stats"><!-- 체력/멘탈 바 JS로 채워짐 --></div>
+    <div id="header-sub-stats"><!-- 나머지 스탯 JS로 채워짐 --></div>
+</div>
+    </div>
+
     <div id="app-wrapper">
         <div class="container">
-            <!-- 설정 화면 -->
-            <div id="setup-screen">
-                <h1>월천킥 작가 시뮬레이터! Beta 3.1</h1>
+            <!-- [메인 소개 화면] -->
+            <div id="main-screen">
+                <div class="intro-wrapper" style="display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 800px; margin: 0 auto; padding: 20px;">
+                    <img src="./asset/image/game_title.png" alt="게임 타이틀" class="intro-title-img">
+                    <p class="intro-description" style="margin: 20px 0;">웹소설 작가의 치열한 하루를 체험해보세요!<br>집필·연재·홍보·독자 관리까지! 월천킥을 향한 여정을 시작해보세요.</p>
+                    <div class="patch-notes" style="margin: 20px 0;">
+                        <h3>📜 최신 패치 내역</h3>
+                        <ul style="text-align: left; display: inline-block;">
+                            <li>Phase 4 – 작가 스탯 UI 및 사이드바 통합</li>
+                            <li>Phase 3 – 작가 스테이터스 시스템 도입</li>
+                            <li>Phase 2 – 작품·이벤트 시뮬레이션 개선</li>
+                        </ul>
+                    </div>
+                    <button id="intro-start-button" class="btn-primary" style="margin-top:20px;">작가 선택 화면으로 이동</button>
+                </div>
+            </div>
+
+            <!-- 작가 선택/생성 화면 -->
+            <div id="author-screen" style="display: none;">
+                <h1>나의 작가 목록</h1>
+                <div id="author-list-container" class="list-container"></div>
+                <button id="show-create-author-form-button" class="btn-primary">새 작가 생성</button>
+                <div id="create-author-form" style="display: none;" class="form-section">
+                    <h2>새 작가 생성</h2>
+                    <div class="form-group">
+                        <label for="new-author-name">작가명 (필명)</label>
+                        <input type="text" id="new-author-name" placeholder="독자들이 기억할 필명을 지어주세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-author-bio">작가 소개</label>
+                        <textarea id="new-author-bio" placeholder="자신을 어필할 멋진 소개를 작성해보세요"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>프로필 이미지</label>
+                        <div id="profile-image-presets"></div>
+                        <input type="file" id="profile-image-upload" accept="image/*" style="margin-top: 10px;">
+                    </div>
+                    <button id="create-author-button" class="btn-success">이 작가로 시작하기</button>
+                    <button id="cancel-create-author-button" class="btn-secondary">취소</button>
+                </div>
+            </div>
+
+            <!-- 작품 목록 화면 -->
+            <div id="work-list-screen" style="display: none;">
+                <h1>나의 작품 목록</h1>
+                <div id="work-list-container" class="list-container"></div>
+                <button id="show-create-work-screen-button" class="btn-primary">새 작품 집필하기</button>
+            </div>
+
+            <!-- 작품 생성 화면 -->
+            <div id="work-creation-screen" style="display: none;">
+                <h1>새 작품 정보 입력</h1>
                 <div class="form-group">
                     <label for="novel-title">작품 제목</label>
                     <input type="text" id="novel-title" placeholder="나만의 웹소설 제목을 지어주세요">
-                </div>
-                <div class="form-group">
-                    <label for="author-name">작가명</label>
-                    <input type="text" id="author-name" placeholder="필명을 입력해주세요">
                 </div>
                 <div class="form-group">
                     <label for="novel-synopsis">소개글</label>
@@ -31,10 +103,11 @@
                 <div class="form-group"><label>메인 태그 (1개 선택)</label><div id="main-tags-container" class="tag-container"></div></div>
                 <div class="form-group"><label>서브 태그 (최대 6개 선택)</label><div id="sub-tags-container" class="tag-container"></div><p id="sub-tag-limit-msg"></p></div>
                 <button id="start-button">연재 시작!</button>
+                <button id="back-to-work-list-button" class="btn-secondary" style="margin-top: 10px;">작품 목록으로 돌아가기</button>
             </div>
 
             <!-- 시뮬레이션 화면 -->
-            <div id="simulation-screen">
+            <div id="simulation-screen" style="display: none;">
                 <h2 id="novel-title-display"></h2>
                 <p id="author-name-display"></p>
                 <p id="novel-tags-display"></p>
@@ -52,17 +125,20 @@
                 </div>
                 <div class="stats-grid">
                     <div class="stat-box"><div class="label">현재 화수</div><div id="current-chapter" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">최신화 조회수</div><div id="latest-chapter-views" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">하이프 지수</div><div id="hype-meter" class="value">100%</div></div>
-                    <div class="stat-box"><div class="label">총 선호작</div><div id="total-favorites" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">총 알림</div><div id="total-recommendations" class="value">0</div></div>
                     <div class="stat-box"><div class="label">총 조회수</div><div id="total-views" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">1화 조회수</div><div id="first-chapter-views" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">최신화 조회수</div><div id="latest-chapter-views" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">실시간 랭킹</div><div id="realtime-ranking" class="value">순위권 밖</div></div>
+                    <div class="stat-box"><div class="label">현재 연독률</div><div id="current-retention-rate" class="value">0%</div></div>
+                    <div class="stat-box"><div class="label">충성 독자 수</div><div id="loyal-readers" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">총 선호작</div><div id="total-favorites" class="value">0</div></div>
+                    <div class="stat-box"><div class="label">하이프 지수</div><div id="hype-meter" class="value">100%</div></div>
                     <div class="stat-box"><div class="label">최고 최신화 조회수</div><div id="peak-latest-views" class="value">0</div></div>
                     <div class="stat-box"><div class="label">최고 일일 조회수</div><div id="peak-daily-growth" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">실시간 랭킹</div><div id="realtime-ranking" class="value">순위권 밖</div></div>
                     <div class="stat-box"><div class="label">최고 실시간 랭킹</div><div id="peak-realtime-ranking" class="value">순위권 밖</div></div>
+                    
                 </div>
-
+            
                 <div>
                     <h3 class="section-title">현재 에피소드 진행도</h3>
                     <div id="narrative-progress-container">
@@ -78,24 +154,97 @@
                     <div class="chart-wrapper"><h3 class="chart-title">일자별 조회수 증가량</h3><canvas id="daily-growth-chart"></canvas></div>
                 </div>
             </div>
-        </div>
-        <div id="log-sidebar"><h3>타임라인</h3><div id="timeline-log"></div></div>
-    </div>
 
-    <!-- 선택형 이벤트 모달 -->
-    <div id="choice-event-modal" class="modal" style="z-index: 1001;">
-        <div class="modal-content" style="max-width: 550px;">
-            <h2 id="choice-event-title" style="color: var(--primary-color);"></h2>
-            <p id="choice-event-description" style="font-size: 1.05em; line-height: 1.6; color: var(--subtext-color); margin-bottom: 25px;"></p>
-            <div id="choice-event-options"></div>
-            <div id="choice-event-result" style="display: none; margin-top: 20px;">
-                <p id="choice-event-result-text" style="background-color: var(--widget-bg-alt); padding: 15px; border-radius: 8px;"></p>
-                <button id="choice-event-confirm-button">확인</button>
+            <!-- 작가 정보 허브 화면 -->
+            <!-- 작가 정보 허브 화면 -->
+<div id="author-hub-screen" class="container" style="display: none;">
+    <div id="hub-content-wrapper" style="display: flex; flex-wrap: wrap; gap: 30px;">
+        
+        <!-- [수정] '작가 정보' 패널을 '작가 거주 환경' 패널로 교체 -->
+        <div id="hub-environment-panel" style="flex: 1; min-width: 300px;">
+            <h3 class="section-title">작가 거주 환경</h3>
+            <div id="environment-items-container">
+                <!-- 각 아이템은 추후 데이터와 연동될 수 있도록 data-item 속성을 추가합니다. -->
+                <div class="environment-item">
+                    <i class="fa-solid fa-computer"></i>
+                    <div class="item-details">
+                        <span class="item-name">컴퓨터</span>
+                        <span class="item-status">구형 노트북</span>
+                    </div>
+                    <button class="btn-upgrade" data-item="computer" data-title="컴퓨터">교체</button>
+                </div>
+                <div class="environment-item">
+                    <i class="fa-solid fa-keyboard"></i>
+                    <div class="item-details">
+                        <span class="item-name">키보드</span>
+                        <span class="item-status">기본 멤브레인 키보드</span>
+                    </div>
+                    <button class="btn-upgrade" data-item="keyboard" data-title="키보드">교체</button>
+                </div>
+                <div class="environment-item">
+                    <i class="fa-solid fa-chair"></i>
+                    <div class="item-details">
+                        <span class="item-name">책상/의자</span>
+                        <span class="item-status">삐걱거리는 의자</span>
+                    </div>
+                    <button class="btn-upgrade" data-item="desk" data-title="책상/의자">교체</button>
+                </div>
+                <div class="environment-item">
+                    <i class="fa-solid fa-house-user"></i>
+                    <div class="item-details">
+                        <span class="item-name">거주지</span>
+                        <span class="item-status">반지하 원룸</span>
+                    </div>
+                    <button class="btn-upgrade" data-item="residence" data-title="거주지">교체</button>
+                </div>
+                <!-- '여자친구' 항목은 이미지 슬롯을 포함하여 특별하게 구성합니다. -->
+                <div class="environment-item girlfriend-item">
+                    <img src="./asset/image/girlfriend_null.png" alt="여자친구" class="girlfriend-img">
+                    <div class="item-details">
+                        <span class="item-name">여자친구</span>
+                        <span class="item-status">존재하지 않는 기억</span>
+                    </div>
+                    <button class="btn-upgrade" data-item="girlfriend" data-title="여자친구">없음</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="hub-actions-panel" style="flex: 1; min-width: 300px;">
+            <h3 class="section-title">활동 메뉴</h3>
+            <!-- [수정] 간격 조정을 위해 버튼을 감싸는 컨테이너를 그대로 둡니다. CSS에서 gap을 사용할 것입니다. -->
+            <div id="hub-actions-container" class="action-panel">
+                <button id="hub-btn-rest" class="btn-primary"><i class="fa-solid fa-bed"></i> 휴식하기 (체력/멘탈 회복)</button>
+                <button id="hub-btn-promote" class="btn-secondary"><i class="fa-solid fa-wifi"></i> 인터넷 접속</button>
+                <button id="hub-btn-shop" class="btn-secondary"><i class="fa-solid fa-cart-shopping"></i> 상점 (아이템 구매)</button>
+                <button id="hub-btn-inventory" class="btn-secondary"><i class="fa-solid fa-sitemap"></i> 스킬 트리</button>
+                <button id="hub-btn-leaderboard" class="btn-primary"><i class="fa-solid fa-crown"></i> 명예의 전당 보기</button>
+                <button id="hub-btn-change-author" class="btn-primary"><i class="fa-solid fa-users"></i> 다른 작가 선택</button>
             </div>
         </div>
     </div>
+    <hr style="margin: 30px 0; border-color: var(--border-color); border-style: dashed;">
+    <button id="hub-return-button" class="btn-primary" style="width: 100%;">이전 화면으로 돌아가기</button>
+</div>
 
-    <!-- 결과 모달 -->
+        </div>
+        <!-- [수정] Sidebar: 타임라인과 액션 버튼 영역으로 변경 -->
+        <div id="log-sidebar">
+            <div id="sidebar-author-info-placeholder"></div>
+            <div id="sidebar-actions"></div>
+            <div class="timeline-header"><h3>타임라인</h3><button id="toggle-timeline" class="toggle-btn">▼</button></div>
+            <div id="timeline-log"></div>
+        </div>
+    </div>
+    
+    <!-- 모달들 -->
+    <div id="leaderboard-modal" class="modal">
+        <div class="modal-content">
+            <h2><i class="fa-solid fa-crown"></i> 명예의 전당</h2>
+            <p>수익 기준 상위 10개 작품입니다.</p>
+            <div id="leaderboard-list"></div>
+            <button id="close-leaderboard-button">닫기</button>
+        </div>
+    </div>
     <div id="result-modal" class="modal">
         <div class="modal-content">
             <h2 id="result-title"></h2>
@@ -124,8 +273,8 @@
                 <h3><i class="fa-solid fa-book-open-reader"></i> 연재 기록</h3>
                 <div class="result-grid">
                     <div class="result-item"><i class="fa-solid fa-bolt"></i><div class="text-content"><span class="label">총 이벤트 발생 수</span><span id="final-total-events" class="value"></span></div></div>
-                     <div class="result-item"><i class="fa-solid fa-face-smile"></i><div class="text-content"><span class="label">긍정적 댓글</span><span id="final-positive-comments" class="value"></span></div></div>
-                     <div class="result-item"><i class="fa-solid fa-face-frown"></i><div class="text-content"><span class="label">부정적 댓글</span><span id="final-negative-comments" class="value"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-face-smile"></i><div class="text-content"><span class="label">긍정적 댓글</span><span id="final-positive-comments" class="value"></span></div></div>
+                    <div class="result-item"><i class="fa-solid fa-face-frown"></i><div class="text-content"><span class="label">부정적 댓글</span><span id="final-negative-comments" class="value"></span></div></div>
                     <div class="result-item"><i class="fa-solid fa-bell"></i><div class="text-content"><span class="label">총 알림</span><span id="final-total-recommendations" class="value"></span></div></div>
                 </div>
             </div>
@@ -139,8 +288,43 @@
             </div>
         </div>
     </div>
+    <div id="choice-event-modal" class="modal" style="z-index: 1001;">
+        <div class="modal-content" style="max-width: 550px;">
+            <h2 id="choice-event-title" style="color: var(--primary-color);"></h2>
+            <p id="choice-event-description" style="font-size: 1.05em; line-height: 1.6; color: var(--subtext-color); margin-bottom: 25px;"></p>
+            <div id="choice-event-options"></div>
+            <div id="choice-event-result" style="display: none; margin-top: 20px;">
+                <p id="choice-event-result-text" style="background-color: var(--widget-bg-alt); padding: 15px; border-radius: 8px;"></p>
+                <button id="choice-event-confirm-button">확인</button>
+            </div>
+        </div>
+    </div>
+    <div id="rest-modal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <h2><i class="fa-solid fa-bed"></i> 휴식하기</h2>
+            <p>어떤 방식으로 휴식을 취하시겠습니까?</p>
+            <div id="rest-options-container" class="action-panel" style="margin-top: 25px;">
+                <button id="rest-btn-home" class="btn-secondary"><i class="fa-solid fa-house"></i> 집에서 휴식 (실시간 회복)</button>
+                <button id="rest-btn-drink" class="btn-secondary"><i class="fa-solid fa-martini-glass"></i> 술 한잔하기 (1일, 10만원)</button>
+                <button id="rest-btn-clinic" class="btn-secondary"><i class="fa-solid fa-hospital"></i> 정형외과 가기 (1일, 20만원)</button>
+                <button id="rest-btn-trip" class="btn-secondary"><i class="fa-solid fa-plane-departure"></i> 여행 떠나기 (5일, 50만원)</button>
+            </div>
+            <button id="close-rest-modal-button" class="btn-secondary" style="margin-top: 30px;">취소</button>
+        </div>
+    </div>
 
-    <!-- 메인 실행 스크립트 (모듈로 로드) -->
+    <!-- [신규] 업그레이드 모달 추가 -->
+<div id="upgrade-modal" class="modal">
+    <div class="modal-content" style="max-width: 550px;">
+        <h2 id="upgrade-modal-title"></h2>
+        <div id="upgrade-modal-content">
+            <!-- 추후 이곳에 업그레이드 선택지가 동적으로 채워집니다. -->
+            <p style="color: var(--subtext-color); margin: 20px 0;">이 기능은 현재 준비 중입니다. 어떤 멋진 아이템들이 기다리고 있을까요?</p>
+        </div>
+        <button id="close-upgrade-modal-button" class="btn-secondary" style="margin-top: 20px;">닫기</button>
+    </div>
+</div>
+
     <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -73,4 +73,56 @@ export function getRankValue(rankStr) {
     if (rankStr.includes('상위')) return 101; // '위' 순위보다 낮게 취급
     return 9999; // 순위권 밖
 }
+
+/**
+ * 스탯 값에 따라 보정 배율을 계산합니다. (선형 보간)
+ * @param {number} currentVal - 스탯의 현재 값
+ * @param {number} minVal - 스탯의 최소값 (e.g. 0)
+ * @param {number} maxVal - 스탯의 최대값 (e.g. 500)
+ * @param {number} baselineVal - 1.0 배율의 기준이 되는 값 (e.g. 100)
+ * @param {number} minModifier - 최소값일 때의 배율 (e.g. 0.5)
+ * @param {number} maxModifier - 최대값일 때의 배율 (e.g. 2.0)
+ * @returns {number} 계산된 보정 배율
+ */
+export function calculateStatModifier(currentVal, minVal, maxVal, baselineVal, minModifier, maxModifier) {
+    if (currentVal <= baselineVal) {
+        // 기준값 이하: 최소 배율과 1.0 사이를 보간
+        const ratio = (currentVal - minVal) / (baselineVal - minVal);
+        return minModifier + (1.0 - minModifier) * ratio;
+    } else {
+        // 기준값 초과: 1.0과 최대 배율 사이를 보간
+        const ratio = (currentVal - baselineVal) / (maxVal - baselineVal);
+        return 1.0 + (maxModifier - 1.0) * ratio;
+    }
+}
+
+// 댓글 확률 보정 함수
+
+export function getViewsModifier(views) {
+    const minViews = 100;
+    const baseViews = 1000;
+    const maxViews = 3000;
+
+    const minModifier = 0.5;
+    const baseModifier = 1.0;
+    const maxModifier = 1.5;
+
+    if (views <= minViews) {
+        return minModifier; // 100 이하는 0.5 고정
+    }
+    if (views >= maxViews) {
+        return maxModifier; // 3000 이상은 1.5 고정
+    }
+
+    if (views > minViews && views <= baseViews) {
+        // 100과 1000 사이: 0.5와 1.0 사이를 보간
+        const ratio = (views - minViews) / (baseViews - minViews);
+        return minModifier + (baseModifier - minModifier) * ratio;
+    } else { // views > baseViews && views < maxViews
+        // 1000과 3000 사이: 1.0과 1.5 사이를 보간
+        const ratio = (views - baseViews) / (maxViews - baseViews);
+        return baseModifier + (maxModifier - baseModifier) * ratio;
+    }
+}
+
 // --- END OF FILE utils.js ---

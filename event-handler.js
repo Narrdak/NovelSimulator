@@ -6,8 +6,77 @@
 import { gameState, setGameState } from './state.js';
 import { randomEvents } from './data/RandEvents.js';
 import { playerChoiceEvents } from './data/PlayEvents.js';
-import { pauseGame, resumeGame, endGame } from './game-controller.js';
-import { addLogMessage, updateUI } from './ui-manager.js';
+import { applyEffect, pauseGame, resumeGame, endGame } from './game-controller.js';
+import { showChoiceEventModal, addLogMessage, updateUI } from './ui-manager.js';
+
+
+/**
+ * [신규] 이벤트에 정의된 모든 조건이 현재 게임 상태에서 충족되는지 확인합니다.
+ * @param {object} event - 검사할 이벤트 객체
+ * @returns {boolean} 모든 조건이 충족되면 true, 아니면 false
+ */
+export function checkEventConditions(event) {
+    if (!event.conditions || event.conditions.length === 0) {
+        return true; // 조건이 없으면 항상 통과
+    }
+
+    const { currentAuthor, mainTag, subTags } = gameState;
+
+    for (const condition of event.conditions) {
+        let subject; // 비교 대상 값
+
+        // 1. 조건에 따라 비교 대상(subject) 가져오기
+        switch (condition.type) {
+            case 'stat':
+                if (!currentAuthor || !currentAuthor.stats[condition.stat]) return false;
+                subject = currentAuthor.stats[condition.stat].current;
+                break;
+            case 'gameState':
+                if (gameState[condition.property] === undefined) return false;
+                subject = gameState[condition.property];
+                break;
+            case 'tag':
+                if (condition.property === 'mainTag') subject = mainTag;
+                else if (condition.property === 'subTags') subject = subTags;
+                else return false;
+                break;
+            default:
+                console.warn(`Unknown condition type: ${condition.type}`);
+                return false; // 알 수 없는 조건 타입
+        }
+
+        // 2. 연산자에 따라 조건 검사
+        let result = false;
+        const value = condition.value;
+
+        switch (condition.operator) {
+            case '>=': result = subject >= value; break;
+            case '<=': result = subject <= value; break;
+            case '>':  result = subject > value;  break;
+            case '<':  result = subject < value;  break;
+            case '==': result = subject == value; break;
+            case '!=': result = subject != value; break;
+            case 'includes':
+                if (Array.isArray(subject)) result = subject.includes(value);
+                break;
+            case 'not-includes':
+                if (Array.isArray(subject)) result = !subject.includes(value);
+                break;
+            default:
+                console.warn(`Unknown operator: ${condition.operator}`);
+                return false; // 알 수 없는 연산자
+        }
+
+        // 3. 한 조건이라도 실패하면 즉시 false 반환
+        if (!result) {
+            return false;
+        }
+    }
+
+    // 4. 모든 조건을 통과하면 true 반환
+    return true;
+}
+
 
 /**
  * 랜덤 이벤트를 확률에 따라 발생시키고 처리합니다.
@@ -15,7 +84,11 @@ import { addLogMessage, updateUI } from './ui-manager.js';
 export function handleRandomEvents() {
     if (gameState.chapter <= 10 || gameState.activeEvents.length > 0) return;
 
-    const triggeredEvents = randomEvents.filter(event => Math.random() < event.chance);
+    // [수정] 발동 가능한 이벤트를 먼저 필터링
+    const availableEvents = randomEvents.filter(event => checkEventConditions(event));
+    
+    // [수정] 필터링된 이벤트 중에서 확률에 따라 트리거
+    const triggeredEvents = availableEvents.filter(event => Math.random() < event.chance);
 
     if (triggeredEvents.length > 0) {
         const chosenEvent = triggeredEvents[Math.floor(Math.random() * triggeredEvents.length)];
@@ -30,60 +103,31 @@ export function handleRandomEvents() {
         const newEvent = { ...chosenEvent, remaining: chosenEvent.duration };
         gameState.activeEvents.push(newEvent);
 
+        applyEffect(newEvent.effect);
+
         let type = 'event';
-        // 이벤트 효과 적용
         if (newEvent.effect.favoritesPenaltyRate || newEvent.effect.favoritesAbsolutePenalty) type = 'penalty';
-        if (newEvent.effect.favoritesMultiplier) gameState.totalFavorites *= newEvent.effect.favoritesMultiplier;
-        if (newEvent.effect.favoritesAbsoluteBonus) gameState.totalFavorites += newEvent.effect.favoritesAbsoluteBonus;
-        // ... 기타 효과 적용 로직
         
         addLogMessage(type, `[이벤트] ${newEvent.message}`, gameState.date);
     }
 }
 
 /**
- * 플레이어 선택형 이벤트 모달을 표시하고 로직을 처리합니다.
+ * 플레이어 선택형 이벤트 발생 로직을 담당합니다. UI 표시는 ui-manager에 위임합니다.
  * @param {object} event - 표시할 이벤트 객체 (from PlayEvents.js)
  */
 export function showChoiceEvent(event) {
+    // [수정] 이벤트 발동 전 조건을 다시 한번 확인 (마일스톤 등 외부에서 직접 호출될 경우 대비)
+    if (!checkEventConditions(event)) {
+        console.log(`Event "${event.name}" failed condition check.`);
+        return;
+    }
+
     pauseGame();
-    const modal = document.getElementById('choice-event-modal');
-    document.getElementById('choice-event-title').textContent = event.name;
-    document.getElementById('choice-event-description').textContent = event.description;
-    
-    const optionsContainer = document.getElementById('choice-event-options');
-    optionsContainer.innerHTML = '';
-    
-    const resultContainer = document.getElementById('choice-event-result');
-    resultContainer.style.display = 'none';
-    optionsContainer.style.display = 'block';
-
-    event.options.forEach(option => {
-        const button = document.createElement('button');
-        button.textContent = option.text;
-        button.className = 'choice-button';
-        button.style.cssText = "background: var(--widget-bg-alt); width: 100%; margin-bottom: 10px;";
-        
-        button.onclick = () => {
-            const effectFn = option.effect;
-            const result = typeof effectFn === 'function' ? effectFn() : effectFn;
-
-            // 효과 적용 로직...
-            if (result.hypeBonus) gameState.hypeMultiplier = Math.max(0.1, gameState.hypeMultiplier + result.hypeBonus);
-            if (result.extraEarnings) gameState.extraEarnings += result.extraEarnings;
-            // ...기타 등등
-
-            updateUI(); // 효과 적용 후 UI 즉시 업데이트
-
-            document.getElementById('choice-event-result-text').textContent = result.resultText || option.resultTextBase;
-            resultContainer.style.display = 'block';
-            optionsContainer.style.display = 'none';
-        };
-        optionsContainer.appendChild(button);
+    showChoiceEventModal(event, (result) => {
+        applyEffect(result);
+        resumeGame();
     });
-
-    document.getElementById('choice-event-confirm-button').onclick = resumeGame;
-    modal.style.display = 'flex';
 }
 
 /**
@@ -101,12 +145,10 @@ export function updateActiveEvents() {
 export function getActiveEventEffects() {
     const effects = { inflowMultiplier: 1, retentionRate: 1, favoriteRate: 1 };
     gameState.activeEvents.forEach(event => {
-        for (const key in event.effect) {
-            if (!key.includes('Absolute') && !key.includes('PenaltyRate') && !key.includes('Multiplier')) {
-                effects[key] *= event.effect[key];
-            }
-        }
+        if (event.effect.inflowMultiplier) effects.inflowMultiplier *= event.effect.inflowMultiplier;
+        if (event.effect.retentionRate) effects.retentionRate *= event.effect.retentionRate;
+        if (event.effect.favoriteRate) effects.favoriteRate *= event.effect.favoriteRate;
+        // 다른 곱연산 효과들도 여기에 추가
     });
     return effects;
 }
-// --- END OF FILE event-handler.js ---

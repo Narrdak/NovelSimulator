@@ -123,10 +123,11 @@ export const randomEvents = [
       name: "독자의 심층 분석",
       message: "한 독자가 소설의 떡밥과 설정을 정리한 분석글을 올렸습니다. 독자들의 이해도가 깊어집니다.",
       chance: 0.09,      // 9% 확률
-      duration: 4,       // 4일 지속
+      duration: 5,       // 4일 지속
       effect: {
+        inflowMultiplier: 1.15,           // 신규 유입 1.15배
         retentionRate: 1.015,            // 독자 유지율 +1.5%
-        favoritesAbsoluteBonus: 40       // 즐겨찾기 +40
+        favoritesAbsoluteBonus: 20       // 즐겨찾기 +40
       }
     },
   
@@ -504,6 +505,18 @@ export const randomEvents = [
           retentionRate: 0.88,             // 독자 유지율 -12%
           favoritesPenaltyRate: 0.15,      // 즐겨찾기 15% 감소
           favoritesAbsolutePenalty: 150    // 즐겨찾기 -150
+        }
+      },
+
+      {
+        name: "뒷광고 발각",
+        message: "작가가 아닌 척 뒷광고 한 게 '신규 회차 등록' 버튼 떄문에 걸렸습니다! 수치심과 더불어, 작품에 부정적 영향이 미칩니다.",
+        chance: 0.01,      // 3% 확률
+        duration: 7,       // 7일 지속
+        effect: {
+        mental: -10,
+          inflowMultiplier: 0.8,           // 신규 유입 80%로 감소
+          retentionRate: 0.95,             // 독자 유지율 -5%
         }
       },
     

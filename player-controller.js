@@ -8,6 +8,7 @@ import { addLogMessage, updateUI, hideRestModal, renderAuthorHub, updateAuthorSt
 import { pauseGame, resumeGame, applyEffect, getRandomInt } from './game-controller.js';
 import { environmentItems } from './data/EnvironmentItems.js';
 import { authorActions } from './data/author-actions.js';
+import { randomEvents } from './data/RandEvents.js';
 
 let restIntervalId = null;
 let restDayCounter = 0;

@@ -117,7 +117,11 @@ export const rankingTiers = [
     // === 백분위 기준 ===
     { views: 700,   rank: '상위 5%' },
     { views: 600,   rank: '상위 10%' },
-    { views: 400,   rank: '상위 20%' },
+    { views: 500,   rank: '상위 25%' },
+    { views: 400,   rank: '상위 40%' },
+    { views: 300,   rank: '상위 50%' },
+    { views: 200,   rank: '상위 75%' },
+    { views: 100,   rank: '상위 80%' },
     { views: 0,     rank: '순위권 밖' }
   ];
 

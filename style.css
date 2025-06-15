@@ -5,9 +5,9 @@
     --primary-color: #4f6dff;
     --green-color: #2ecc71;
     --red-color: #e74c3c;
-    --light-bg: #1a1a2e; /* 전체 배경색 */
-    --widget-bg: #1f2233; /* 컨테이너, 사이드바 배경 */
-    --widget-bg-alt: #2a2d42; /* 스탯 박스 등 내부 요소 배경 */
+    --light-bg: #1a1a2e;
+    --widget-bg: #1f2233;
+    --widget-bg-alt: #2a2d42;
     --text-color: #e0e0e0;
     --subtext-color: #a0a0b0;
     --positive-color: #3498db;
@@ -22,9 +22,26 @@ body {
     background-color: var(--light-bg);
     color: var(--text-color);
     margin: 0;
-    /* [수정] 고정 헤더를 위한 상단 패딩 추가 */
-    padding: 120px 20px 20px 20px;
+    padding: 20px;
     box-sizing: border-box;
+    transition: padding-top 0.3s ease;
+}
+
+/* [핵심] 새로운 Flexbox 기반 레이아웃 */
+#root-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#page-header {
+    flex-shrink: 0; /* 헤더는 줄어들지 않음 */
+}
+
+#main-content {
+    flex-grow: 1; /* 남은 공간을 모두 차지 */
+    overflow-y: auto; /* 컨텐츠가 길어지면 스크롤 생성 */
+    padding: 20px;
 }
 
 #app-wrapper {
@@ -33,10 +50,15 @@ body {
     align-items: flex-start;
     max-width: 1300px;
     margin: 0 auto;
+    /* [핵심 수정 1] 화면이 좁아지면 아이템들이 다음 줄로 넘어가도록 설정 */
+    flex-wrap: wrap; 
 }
 
 .container {
-    flex-grow: 1;
+    /* [핵심 수정 2] flex-grow를 사용하여 남은 공간을 차지하도록 설정하고,
+       기본 너비(basis)를 설정하여 반응형 동작의 기준점을 만듭니다. */
+    flex: 1 1 600px; /* flex-grow: 1, flex-shrink: 1, flex-basis: 600px */
+    min-width: 0; /* flex 아이템 내부 컨텐츠가 넘치는 것을 방지 */
     background: var(--widget-bg);
     padding: 30px;
     border-radius: 16px;
@@ -227,8 +249,20 @@ h3.chart-title, h3.section-title {
     margin-bottom: 20px;
     display: flex;
     justify-content: center;
+    align-items: center; /* 버튼들의 수직 정렬을 위해 추가 */
     gap: 10px;
+    /* [핵심 수정 1] flex 아이템들이 여러 줄에 걸쳐 배치될 수 있도록 허용합니다. */
+    flex-wrap: wrap; 
 }
+
+/* [핵심 수정 2] 줄 바꿈을 위해 추가한 div에 대한 스타일 */
+.flex-break {
+    /* flex 아이템으로서, 부모 너비의 100%를 차지하도록 설정합니다. */
+    flex-basis: 100%;
+    /* 시각적으로 보이지 않게 하고, 레이아웃에 영향을 주지 않도록 높이를 0으로 설정합니다. */
+    height: 0;
+}
+
 .speed-control-bar .speed-button {
     padding: 6px 12px;
     border: 1px solid var(--border-color);
@@ -238,6 +272,7 @@ h3.chart-title, h3.section-title {
     cursor: pointer;
     transition: all .2s ease;
     font-size: 0.9em;
+    
 }
 .speed-control-bar .speed-button:hover {
     background-color: var(--primary-color);
@@ -253,13 +288,13 @@ h3.chart-title, h3.section-title {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 150px));
+    gap: 10px;
     margin: 20px 0;
 }
 .stat-box {
     background: var(--widget-bg-alt);
-    padding: 20px;
+    padding: 5px 10px;
     border-radius: 12px;
     text-align: center;
     border: 1px solid transparent;
@@ -270,13 +305,13 @@ h3.chart-title, h3.section-title {
     border-color: var(--primary-color);
 }
 .stat-box .label {
-    font-size: .9em;
+    font-size: .8em;
     color: var(--subtext-color);
     margin-bottom: 8px;
     font-weight: 500;
 }
 .stat-box .value {
-    font-size: 1.5em;
+    font-size: 1.1em;
     font-weight: 700;
     color: var(--text-color);
 }
@@ -315,9 +350,10 @@ h3.chart-title, h3.section-title {
 
 /* [수정] 사이드바 스타일 간소화 */
 #log-sidebar {
-    width: 320px;
-    min-width: 280px;
-    flex-shrink: 0; /* 사이드바가 찌그러지지 않도록 설정 */
+    /* [핵심 수정 3] 사이드바도 flex 아이템으로 정의합니다. 
+       PC에서는 고정된 너비를 갖고, 모바일에서는 전체 너비를 차지하게 됩니다. */
+    flex: 1 1 300px; /* grow: 1, shrink: 1, basis: 300px */
+    max-width: 320px; /* 사이드바가 너무 커지는 것을 방지 */
     background: var(--widget-bg);
     border-radius: 16px;
     padding: 20px;
@@ -480,7 +516,7 @@ h3.chart-title, h3.section-title {
 
 
 .chart-row { display: flex; gap: 20px; margin-top: 20px; }
-.chart-wrapper { flex: 1; min-width: 0; background: var(--widget-bg-alt); padding: 15px; border-radius: 12px; }
+.chart-wrapper { flex: 1; min-width: 0; background: var(--widget-bg-alt); padding: 15px; border-radius: 12px; position: relative; }
 
 @media (max-width: 1200px) {
     #global-header {
@@ -492,14 +528,14 @@ h3.chart-title, h3.section-title {
     #header-core-stats {
        flex-grow: 1;
     }
-    body {
-        padding-top: 180px; /* 늘어난 헤더 높이에 맞게 조정 */
-    }
 }
 
 
 @media (max-width: 768px) {
-    body { padding: 10px; padding-top: 160px; }
+    /* [수정] 기본 body 스타일은 이곳에서 건드리지 않음 */
+    body { 
+        padding: 10px; 
+    }
     #app-wrapper { flex-direction: column }
     #log-sidebar { width: 100%; height: auto; max-height: 300px; margin-top: 20px; position: static; }
     .chart-row { flex-direction: column }
@@ -625,6 +661,7 @@ h3.chart-title, h3.section-title {
     display: flex;
     gap: 15px;
     margin-bottom: 10px;
+    flex-wrap: wrap; /* [추가] 이미지가 넘치면 자동으로 줄바꿈 처리 */
 }
 .profile-preset {
     width: 70px;
@@ -721,125 +758,130 @@ h3.chart-title, h3.section-title {
 /* --- END OF Phase 2 CSS --- */
 
 /* --- [수정] Phase 4: 글로벌 헤더 스타일 --- */
+/* --- 글로벌 헤더 --- */
 #global-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 100;
     background-color: var(--widget-bg);
     padding: 15px 30px;
     display: flex;
-    flex-wrap: wrap; /* 창이 좁아지면 줄바꿈 허용 */
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between; /* 양쪽 끝으로 정렬 */
-    gap: 15px 30px; /* 세로 간격, 가로 간격 */
+    justify-content: space-between;
+    gap: 15px 30px;
     border-bottom: 2px solid var(--border-color);
     box-shadow: 0 2px 12px 0 rgba(0,0,0,0.2);
-    box-sizing: border-box;
-    min-height: 100px;
 }
 
 #header-author-profile {
     display: flex;
     align-items: center;
     gap: 15px;
-    flex-shrink: 0;
-    flex-grow: 1; /* 남는 공간을 차지하려 시도 */
-    min-width: 200px;
-    max-width: 300px;
+    flex: 1 1 250px; /* grow, shrink, basis */
+    min-width: 250px;
 }
-
 #header-author-img {
-    width: 100px;
+    width: 60px;
     height: 60px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid var(--primary-color);
 }
-
 .profile-text-info {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     gap: 5px;
-    width: 100%;
-    min-width: 200px;
-    max-width: 300px;
 }
-
 #header-author-name-level {
-    
     font-size: 1.1em;
     font-weight: 700;
-    color: var(--text-color);
 }
-
 #header-author-name-level .level-badge {
     font-size: 0.8em;
     font-weight: 500;
     color: var(--subtext-color);
 }
-
 .date-money-info {
     display: flex;
     flex-direction: column;
     gap: 8px;
     font-size: 1em;
     font-weight: 600;
-    color: var(--subtext-color);
-    flex-shrink: 0; /* 찌그러지지 않도록 */
     text-align: right;
+    flex-shrink: 0;
 }
-
-.date-money-info i {
-    margin-right: 8px;
-    color: var(--primary-color);
-}
-
-#header-money span {
-    color: var(--green-color);
-}
-
+.date-money-info i { margin-right: 8px; color: var(--primary-color); }
+#header-money span { color: var(--green-color); }
 #header-stats-container {
     display: flex;
     align-items: center;
     gap: 20px;
-    flex-grow: 1;
-    margin-top: 5px; /* 줄바꿈 시 상단 여백 */
+    flex: 1 1 180px;
 }
-
 #header-main-stats {
     display: flex;
     flex-direction: column;
     gap: 5px;
     min-width: 180px;
-    max-width: 250px; /* [수정] 프로그레스 바 최대 너비 제한 */
     flex-grow: 1;
 }
 
-#header-sub-stats {
-    display: grid;
-    grid-template-columns: repeat(2, auto);
-    gap: 6px 15px;
-    font-size: 0.9em;
-    font-weight: 500;
-}
-
-.header-stat-item {
+/* --- 전광판 --- */
+#marquee-container {
+    height: 40px;
+    background-color: var(--widget-bg-alt);
+    border-bottom: 1px solid var(--border-color);
+    overflow: hidden;
     display: flex;
     align-items: center;
-    gap: 6px;
+}
+#marquee-content {
+    display: inline-block;
     white-space: nowrap;
+    padding-left: 100%;
+    animation: marquee-animation 30s linear infinite;
+    font-size: 1em;
+    font-weight: 500;
+}
+#marquee-content span { margin: 0 40px; }
+#marquee-content .trend-tag { color: var(--primary-color); font-weight: bold; }
+#marquee-content .dev-message { color: var(--green-color); font-style: italic; }
+@keyframes marquee-animation {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
 }
 
-.header-stat-item i {
+/* --- 작가 허브 화면 스타일 수정 및 추가 --- */
+
+/* [신규] 작가 스테이터스 패널 스타일 */
+#status-items-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2열 그리드 */
+    gap: 15px;
+}
+
+.status-item {
+    background-color: var(--widget-bg-alt);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.status-item .status-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1em;
+    font-weight: 700;
+}
+.status-item i {
     color: var(--primary-color);
-    width: 14px;
-    text-align: center;
 }
-
-.header-stat-item .stat-title {
-    color: var(--subtext-color);
+.status-item .status-value {
+    font-size: 1.3em;
+    font-weight: 700;
 }
 
 /* --- END OF Phase 4 CSS --- */
@@ -1154,4 +1196,211 @@ h3.chart-title, h3.section-title {
 #upgrade-confirm-button:disabled {
     background-color: var(--system-color);
     cursor: not-allowed;
+}
+
+/* [신규] 작품 제목과 토글 버튼을 위한 헤더 스타일 */
+.work-title-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 5px;
+}
+#novel-title-display {
+    flex-grow: 1;
+    margin-bottom: 0; /* 헤더 안으로 들어가면서 불필요한 마진 제거 */
+}
+.btn-toggle-info {
+    flex-shrink: 0;
+    background: var(--widget-bg-alt);
+    border: 1px solid var(--border-color);
+    color: var(--subtext-color);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-toggle-info:hover {
+    background: var(--primary-color);
+    color: white;
+}
+.btn-toggle-info i {
+    transition: transform 0.3s ease;
+}
+
+/* --- [신규] 정보가 접혔을 때의 스타일 --- */
+
+/* 1. 숨겨야 할 요소들을 display: none 처리 */
+#collapsible-work-info.collapsed-info #novel-synopsis-display,
+#collapsible-work-info.collapsed-info .earnings-info-bar,
+#collapsible-work-info.collapsed-info .stat-box-full {
+    display: none;
+}
+
+/* 2. 보이는 요소들의 폰트 및 패딩을 작게 조절 */
+#collapsible-work-info.collapsed-info #novel-title-display {
+    font-size: 1.25em;
+    padding: 10px 15px;
+}
+#collapsible-work-info.collapsed-info #author-name-display,
+#collapsible-work-info.collapsed-info #novel-tags-display {
+    font-size: 0.9em;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+#collapsible-work-info.collapsed-info .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+    gap: 10px;
+}
+#collapsible-work-info.collapsed-info .stat-box {
+    padding: 15px;
+}
+#collapsible-work-info.collapsed-info .stat-box .value {
+    font-size: 1.1em;
+}
+#collapsible-work-info.collapsed-info .stat-box .label {
+    font-size: 0.8em;
+}
+
+
+/* 3. 토글 버튼 아이콘 회전 */
+#collapsible-work-info.collapsed-info .btn-toggle-info i {
+    transform: rotate(180deg);
+}
+
+
+/* --- [신규] 새 작가 생성 모달 UI 개선 --- */
+
+/* 모달 내부 폼의 전체적인 레이아웃 설정 */
+#create-author-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* 각 폼 그룹(라벨+입력) 사이의 간격을 줍니다. */
+}
+
+/* 텍스트 입력 필드(작가명, 작가소개) 공통 스타일 */
+#create-author-modal input[type="text"],
+#create-author-modal textarea {
+    background-color: var(--light-bg); /* 앱의 기본 배경색과 동일하게 */
+    color: var(--text-color);          /* 텍스트는 밝은 색으로 */
+    border: 1px solid var(--border-color); /* 테두리도 테마에 맞게 */
+    border-radius: 8px;
+    padding: 12px 15px;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1em;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* 작가 소개(textarea)의 최소 높이 지정 */
+#create-author-modal textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* 플레이스홀더(안내 문구) 스타일 */
+#create-author-modal input[type="text"]::placeholder,
+#create-author-modal textarea::placeholder {
+    color: var(--subtext-color);
+    opacity: 0.8;
+}
+
+/* 입력 필드에 포커스(클릭)되었을 때 스타일 */
+#create-author-modal input[type="text"]:focus,
+#create-author-modal textarea:focus {
+    outline: none; /* 기본 브라우저 아웃라인 제거 */
+    border-color: var(--primary-color); /* 테마의 주요 색상으로 테두리 강조 */
+    box-shadow: 0 0 0 3px rgba(79, 109, 255, 0.2); /* 부드러운 글로우 효과 */
+}
+
+/* 버튼들을 감싸는 컨테이너 스타일 */
+.modal-form-actions {
+    display: flex;
+    justify-content: flex-end; /* 버튼들을 오른쪽으로 정렬 */
+    gap: 10px; /* 버튼 사이의 간격 */
+    margin-top: 10px; /* 버튼 그룹 위의 공간 확보 */
+}
+
+
+/* [신규] 작가 행동 모달 스타일 */
+.modal-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.modal-header-flex h2 {
+    text-align: left;
+    margin: 0;
+}
+.points-display {
+    background-color: var(--widget-bg-alt);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.points-display i {
+    color: var(--primary-color);
+}
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 5px;
+}
+.action-button {
+    background-color: var(--widget-bg-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.action-button:not(:disabled):hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-color);
+}
+.action-button:disabled {
+    background-color: #25283a;
+    color: var(--subtext-color);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+.action-name {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-color);
+}
+.action-button:disabled .action-name {
+    color: var(--subtext-color);
+}
+.action-desc {
+    font-size: 0.9em;
+    color: var(--subtext-color);
+    line-height: 1.4;
+}
+.action-cost-cooldown {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-top: 8px;
+}
+.action-button:disabled .action-cost-cooldown {
+    color: var(--red-color);
 }

@@ -98,6 +98,8 @@ export function getInitialGameState(author = null) {
             subs: [],        // 이달의 서브 트렌드 태그 (5개)
             lastUpdated: -1, // 마지막으로 업데이트된 월(month)을 저장 (0~11)
         },
+        chapterViews: [],    // 각 화의 '누적 조회수' (UI 표시용)
+        activeReaders: [],   // [신규] 각 화에 '현재 머무는 독자 수' (시뮬레이션 계산용)
         previousScreenId: 'work-list-screen'
     };
 }

@@ -3,22 +3,23 @@
  * @file 이 파일은 게임의 핵심 루프인 `publishNewChapter`와 `updateTick` 함수를 포함합니다.
  *       게임의 시간 흐름과 상태 변화의 중심 로직입니다.
  */
-import { gameState, config, AppData } from './state.js';
+import { gameState, config, AppData, saveAppData } from './state.js';
 import { expToNextLevel, applyLevelUpStats } from './level-table.js';
-import { endGame, applyEffect, pauseGame } from './game-controller.js';
-import { updateUI, addLogMessage, updateDailyGrowthChart, updateLatestViewsTrendChart } from './ui-manager.js';
+import { endGame, applyEffect, pauseGame, saveCurrentGame } from './game-controller.js';
+import { updateUI, addLogMessage, updateDailyGrowthChart, updateLatestViewsTrendChart, updateMarquee } from './ui-manager.js';
 import { handleRandomEvents, showChoiceEvent, updateActiveEvents, getActiveEventEffects, checkEventConditions } from './event-handler.js';
 import { milestoneEvents, playerChoiceEvents } from './data/PlayEvents.js';
-import { calculateStatModifier, getViewsModifier } from './utils.js';
+import { calculateStatModifier, getViewsModifier, generateNewTrend } from './utils.js';
 import { comments } from './data/Comments.js';
-import { mainTags, subTags } from './data/Tag.js';
+import { mainTags, subTags, loyaltyBonusTags } from './data/Tag.js';
+
 
 let tickIntervalId = null;
 let chapterIntervalId = null;
 
-// [신규] 80% ~ 120% 사이의 랜덤 배율을 반환하는 헬퍼 함수
+// [신규] 90% ~ 110% 사이의 랜덤 배율을 반환하는 헬퍼 함수
 function getRandomFluctuation() {
-    return 0.8 + Math.random() * 0.4; // 0.8에서 1.2 사이의 값
+    return 0.9 + Math.random() * 0.2; // 0.9에서 1.1 사이의 값
 }
 
 export function startSimulationLoop() {
@@ -39,9 +40,18 @@ export function stopSimulationLoop() {
 export function publishNewChapter() {
     if (gameState.isForcedRest || gameState.isPaused || !gameState.isRunning) return;
 
-     // const finalViews = gameState.chapter > 0 ? gameState.chapterViews[gameState.chapter - 1] : 0;
-    let finalViews = gameState.chapter > 0 ? gameState.chapterViews[gameState.chapter - 1] : 0;
+    if (gameState.currentAuthor) {
+        gameState.currentAuthor.authorPoints++;
+        for (const actionId in gameState.currentAuthor.actionCooldowns) {
+            if (gameState.currentAuthor.actionCooldowns[actionId] > 0) {
+                gameState.currentAuthor.actionCooldowns[actionId]--;
+            }
+        }
+        saveAppData(); // 포인트와 쿨타임 변경사항 저장
+    }
 
+    let finalViews = gameState.chapter > 0 ? gameState.chapterViews[gameState.chapter - 1] : 0;
+    
     if (gameState.chapter > 0) {
         finalViews *= getRandomFluctuation();
         // 다시 할당하여 변동된 값을 확정
@@ -49,10 +59,27 @@ export function publishNewChapter() {
     }
 
     if (gameState.chapter > 1) {
-        const BASELINE_VIEWS = 1000;
-        const performanceRatio = finalViews / BASELINE_VIEWS;
-        let newHype = 1.0 + Math.log(Math.max(1, performanceRatio)) * 0.2;
-        newHype = Math.max(0.7, Math.min(1.5, newHype));
+        let performanceRatio = 1.1; // 기본 성장률 (신작 버프)
+
+        if (gameState.chapter > 2) {
+            const prevViews = gameState.chapterViews[gameState.chapter - 2] || 1; // n-1 화 조회수
+            const prevPrevViews = gameState.chapterViews[gameState.chapter - 3] || 1; // n-2 화 조회수
+            
+            // 0으로 나누는 것을 방지
+            if (prevPrevViews > 0) {
+                performanceRatio = prevViews / prevPrevViews;
+            }
+        }
+        
+        // 성장률에 기반한 새로운 하이프 지수 계산
+        let newHype = 1.0 + Math.log(Math.max(1, performanceRatio)) * 0.3; // 성장률이 1 이상일 때만 로그 보너스
+        if (performanceRatio < 1) {
+            newHype = 1.0 - (1 - performanceRatio) * 0.5; // 성장률이 1 미만이면 패널티
+        }
+
+        newHype = Math.max(0.7, Math.min(1.5, newHype)); // 하이프 값은 70% ~ 150% 사이로 제한
+        
+        // 이전 하이프와 혼합하여 부드럽게 적용 (EMA)
         gameState.latestChapterHype = (gameState.latestChapterHype * 0.7) + (newHype * 0.3);
     }
 
@@ -110,7 +137,6 @@ export function publishNewChapter() {
              const additionalChance = Math.floor((gameState.chapter - 200) / 50) * 0.05;
              const finalChance = baseChance + additionalChance;
              
-             addLogMessage('system', `장기 연재로 인한 완결 가능성 체크... (현재 확률: ${finalChance * 100}%)`, gameState.date);
              if (Math.random() < finalChance) {
                  endGame('대완결');
                  return;
@@ -135,6 +161,40 @@ export function publishNewChapter() {
     gameState.date.setDate(gameState.date.getDate() + 1);
     gameState.chapter++;
 
+    // 새 화 추가 시, 두 배열 모두에 공간 할당
+    gameState.chapterViews.push(0);
+    gameState.activeReaders.push(0); 
+    
+    const newChapterIndex = gameState.chapter - 1;
+
+    // [핵심 로직 개편] 충성 독자 수만큼, 최신화에 근접한 활동 독자를 강제로 이동시킵니다.
+    if (gameState.loyalReaders > 0 && gameState.chapter > 1) {
+        let readersToMove = Math.floor(gameState.loyalReaders);
+        let movedCount = 0;
+
+        // 최신화 직전 회차부터 역순으로 순회합니다. (예: 10화, 9화, 8화...)
+        for (let i = gameState.chapter - 2; i >= 0; i--) {
+            // 이동시킬 독자 수가 더 이상 없으면 루프를 종료합니다.
+            if (readersToMove <= 0) break;
+
+            // 현재 회차(i)에서 이동시킬 수 있는 최대 독자 수
+            const movableReaders = Math.min(gameState.activeReaders[i], readersToMove);
+
+            if (movableReaders > 0) {
+                // (i)화에서 독자 감소
+                gameState.activeReaders[i] -= movableReaders;
+                
+                // 최신화로 독자 증가 및 조회수 발생
+                gameState.activeReaders[newChapterIndex] += movableReaders;
+                gameState.chapterViews[newChapterIndex] += movableReaders;
+                
+                // 이동해야 할 독자 수 차감 및 실제 이동 인원 카운트
+                readersToMove -= movableReaders;
+                movedCount += movableReaders;
+            }
+        }
+    }
+
     const eventToTrigger = milestoneEvents[gameState.chapter];
     if (eventToTrigger) {
         showChoiceEvent(eventToTrigger);
@@ -143,10 +203,10 @@ export function publishNewChapter() {
     if (gameState.chapter === 1) {
         const POPULARITY_BONUS_PER_POINT = 2;
         const initialBonus = (gameState.currentAuthor?.stats.popularity.current || 0) * POPULARITY_BONUS_PER_POINT;
-        gameState.chapterViews.push(initialBonus);
+        if (gameState.activeReaders.length > 0) {
+            gameState.activeReaders[0] += initialBonus;
+        }
         addLogMessage('event', `작가의 인기도 덕분에 초기 독자 ${Math.floor(initialBonus)}명이 유입되었습니다!`);
-    } else {
-        gameState.chapterViews.push(0);
     }
 
     gameState.narrativeProgress += 8;
@@ -179,6 +239,8 @@ export function publishNewChapter() {
             addLogMessage('system', `레벨 ${stats.level} 달성! 최대 체력/멘탈이 증가했습니다.`);
         }
     }
+
+    saveCurrentGame();
 }
 
 function forceRest() {
@@ -191,20 +253,25 @@ function forceRest() {
 
 function updateMonthlyTrend() {
     const currentMonth = gameState.date.getMonth();
-
-    // 현재 월과 마지막 업데이트 월이 다르면 트렌드 갱신
     if (gameState.currentTrend.lastUpdated !== currentMonth) {
-        gameState.currentTrend.lastUpdated = currentMonth;
-
-        // 1. 새로운 메인 트렌드 태그 1개 선택
-        gameState.currentTrend.main = mainTags[Math.floor(Math.random() * mainTags.length)];
-
-        // 2. 새로운 서브 트렌드 태그 5개 선택
-        const shuffledSubs = [...subTags].sort(() => 0.5 - Math.random());
-        gameState.currentTrend.subs = shuffledSubs.slice(0, 5);
+        const newTrend = generateNewTrend();
         
+        const trendData = {
+            ...newTrend,
+            lastUpdated: currentMonth,
+        };
+        
+        // gameState를 먼저 업데이트하고,
+        gameState.currentTrend = trendData;
+        // 그 결과를 AppData에 동기화하여 저장합니다.
+        AppData.gameSettings.currentTrend = trendData;
+        saveAppData();
+
+        // [오류 수정] gameState에 저장된 값을 사용하여 로그 메시지 생성
         const trendMessage = `메인: #${gameState.currentTrend.main}, 서브: #${gameState.currentTrend.subs.join(', #')}`;
         addLogMessage('system', `[${currentMonth + 1}월 트렌드] ${trendMessage}`, gameState.date);
+        
+        updateMarquee();
     }
 }
 
@@ -231,25 +298,134 @@ export function updateTick() {
     
     if (gameState.isPaused || gameState.chapter === 0) return;
 
-    gameState.retentionRateModifier = 1.0;
-    gameState.inflowMultiplierModifier = 1.0;
-    gameState.favoriteRateModifier = 1.0;
-
-    const eventEffects = getActiveEventEffects();
+    // =================================================================
+    // [Phase 1: 이번 Tick의 모든 기준값(파라미터) 계산]
+    // =================================================================
     const authorStats = gameState.currentAuthor?.stats || {};
+    const eventEffects = getActiveEventEffects();
 
-    // [수정된 댓글 확률 계산 로직]
+    // 1-1. 최종 연독률(finalRetentionRate) 계산
+    const writingSkillModifier = calculateStatModifier(authorStats.writingSkill?.current || 0, 0, 500, 100, 0.5, 2.0);
+    const baseLossRate = 1 - config.BASE_RETENTION_RATE;
+    const modifiedLossRate = baseLossRate / writingSkillModifier;
+    const retentionFromSkill = 1 - modifiedLossRate;
+    const fatiguePenaltyMultiplier = 1.0 - (gameState.readerFatigue * 0.2);
+    
+    // (이전에 여러 곳에 흩어져 있던 선언을 이곳으로 통합)
+    gameState.retentionRateModifier = 1.0; 
+    const finalRetentionRate = (retentionFromSkill * eventEffects.retentionRate * gameState.retentionRateModifier * fatiguePenaltyMultiplier);
+    gameState.displayRetentionRate = finalRetentionRate; // UI 및 다른 로직에서 사용할 수 있도록 저장
+
+    // 1-2. 신규 독자 수(newReaders) 계산
+    const trollingSkillModifier = calculateStatModifier(authorStats.trollingSkill?.current || 0, 0, 500, 100, 0.5, 2.0);
+    const potentialSkillModifier = calculateStatModifier(authorStats.potentialSkill?.current || 0, 0, 100, 50, 0.5, 2.0);
+    const BASE_GUARANTEED_INFLOW = 2;
+    const guaranteedInflow = BASE_GUARANTEED_INFLOW * potentialSkillModifier;
+    const baseInflow = 8;
+    gameState.inflowMultiplierModifier = 1.0;
+    const finalInflowMultiplier = eventEffects.inflowMultiplier * gameState.inflowMultiplierModifier * trollingSkillModifier * gameState.latestChapterHype;
+    const writingQualityBonus = (authorStats.writingSkill?.current || 0) * 0.002;
+    const writingSkillForBonus = authorStats.writingSkill?.current || 0;
+    const popularityForBonus = authorStats.popularity?.current || 0;
+    let appealBonusRate = (writingSkillForBonus / 500) + (popularityForBonus / 1500);
+    appealBonusRate = Math.max(0.3, appealBonusRate);
+    const finalAppealMultiplier = 1 + appealBonusRate;
+    let trendMultiplier = 1.0;
+    if (gameState.mainTag === gameState.currentTrend.main) {
+        trendMultiplier += 0.15;
+    }
+    let matchedSubTagsCount = gameState.subTags.filter(tag => gameState.currentTrend.subs.includes(tag)).length;
+    trendMultiplier += matchedSubTagsCount * 0.05;
+
+    let newReaders = (baseInflow * (gameState.publicAppealScore * finalAppealMultiplier * trendMultiplier) * finalInflowMultiplier * (1 + writingQualityBonus)) + guaranteedInflow;
+    newReaders *= getRandomFluctuation();
+    
+    
+    // =================================================================
+// [Phase 2: 독자 이동 및 이탈, 조회수 발생 (최종 수정)]
+// =================================================================
+
+// [Part 1: 신규 독자 유입]
+if (gameState.chapter > 0) {
+    gameState.chapterViews[0] += newReaders;
+    gameState.activeReaders[0] += newReaders;
+}
+
+// [Part 2: 점진적 독자 이동 및 이탈]
+// 이번 tick에 각 회차에서 다음 회차로 이동한 독자 수를 기록합니다.
+const movedReadersThisTick = new Array(gameState.chapter).fill(0);
+
+for (let i = 0; i < gameState.chapter - 1; i++) {
+    // [핵심 1] 이번 tick에서 처리할 독자 수를 결정합니다. (점진적 처리를 위해 20%만)
+    const readersToProcessThisTick = gameState.activeReaders[i] * 0.2;
+
+    if (readersToProcessThisTick > 0) {
+        // [핵심 2] 처리 대상 중, 연독에 '성공'하여 다음 화로 이동할 독자 수를 계산합니다.
+        const readersWhoMove = readersToProcessThisTick * finalRetentionRate;
+        
+        // 이동할 독자 수를 기록합니다.
+        movedReadersThisTick[i+1] = readersWhoMove;
+        
+        // [핵심 3] 현재 회차의 활동 독자 풀에서, '처리 대상 전체' (이동한 독자 + 이탈한 독자)를 빼줍니다.
+        // 이것이 '중도 이탈'을 구현하는 핵심입니다.
+        gameState.activeReaders[i] -= readersToProcessThisTick;
+    }
+}
+
+// [Part 3: 이동 결과 반영]
+// 계산된 이동량을 실제 활동 독자 및 조회수에 반영합니다.
+for (let i = 1; i < gameState.chapter; i++) {
+    if(movedReadersThisTick[i] > 0) {
+        gameState.activeReaders[i] += movedReadersThisTick[i];
+        gameState.chapterViews[i] += movedReadersThisTick[i];
+    }
+}
+
+    // =================================================================
+    // [Phase 3: 후속 계산 (충성 독자, 댓글, 수익 등)]
+    // =================================================================
+    
+    // [핵심 수정] 4-1. 최신화 도달 독자 수 계산 (충성 독자 계산용)
+// 이제 newlyEnteredReaders 변수가 없으므로, Part 3에서 계산된 movedReadersThisTick을 사용합니다.
+// movedReadersThisTick의 마지막 요소가 바로 최신화로 이동한 독자 수입니다.
+gameState.readersReachedLatest = (gameState.chapter > 0) ? movedReadersThisTick[gameState.chapter - 1] : 0;
+
+// 4-2. 충성 독자 계산
+const popularity = authorStats.popularity?.current || 0;
+const mySubTags = gameState.subTags || [];
+
+// 로직 1: 신규 유입 기반
+const baseNewConversionRate = 0.01 + (popularity / 1000) * 0.01;
+const newLoyalReadersFromInflow = gameState.readersReachedLatest * baseNewConversionRate;
+
+// 로직 2: 기존 독자 기반
+const recentActiveReaders = gameState.activeReaders.slice(-10);
+const existingReaderPool = recentActiveReaders.length > 0
+    ? recentActiveReaders.reduce((a, b) => a + b, 0) / recentActiveReaders.length
+    : 0;
+
+let existingConversionRate = 0.0005;
+let tagBonus = 0;
+const bonusValues = mySubTags.map(tag => loyaltyBonusTags[tag] || 0).filter(bonus => bonus > 0).sort((a, b) => b - a);
+let diminishingRate = 1.0;
+bonusValues.forEach(bonus => {
+    tagBonus += bonus * diminishingRate;
+    diminishingRate *= 0.5;
+});
+existingConversionRate += tagBonus;
+const newLoyalReadersFromExisting = existingReaderPool * existingConversionRate;
+
+// 최종 합산
+gameState.loyalReaders += (newLoyalReadersFromInflow + newLoyalReadersFromExisting);
+gameState.loyalReaders *= 0.999;
+
+
+    
+    // 3-3. 댓글 생성 로직
     const latestViews = gameState.chapterViews[gameState.chapter - 1] || 0;
-
-    // 1. 기본 어그로 확률 계산
     const baseProb = 0.1 + (authorStats.trollingSkill?.current || 0) * 0.001;
-
-    // 2. 조회수 보정 배율 계산
     const viewsModifier = getViewsModifier(latestViews);
-
-    // 3. 최종 확률 계산 (최대 80% 상한선 적용)
     const commentProb = Math.min(baseProb * viewsModifier, 0.8);
-
     if (Math.random() < commentProb) {
         let commentPool, commentType;
         if (gameState.narrativeState === 'climax' && Math.random() < 0.5) {
@@ -288,121 +464,10 @@ export function updateTick() {
         applyEffect(effect);
     }
 
-    const writingSkillModifier = calculateStatModifier(authorStats.writingSkill?.current || 0, 0, 500, 100, 0.5, 2.0);
-    const baseLossRate = 1 - config.BASE_RETENTION_RATE;
-    const modifiedLossRate = baseLossRate / writingSkillModifier;
-    const retentionFromSkill = 1 - modifiedLossRate;
-
-    const trollingSkillModifier = calculateStatModifier(authorStats.trollingSkill?.current || 0, 0, 500, 100, 0.5, 2.0);
-    const potentialSkillModifier = calculateStatModifier(authorStats.potentialSkill?.current || 0, 0, 100, 50, 0.5, 2.0);
-    const BASE_GUARANTEED_INFLOW = 2;
-    const guaranteedInflow = BASE_GUARANTEED_INFLOW * potentialSkillModifier;
-    const baseInflow = 10;
-    const finalInflowMultiplier = eventEffects.inflowMultiplier * gameState.inflowMultiplierModifier * trollingSkillModifier * gameState.latestChapterHype;
-    const writingQualityBonus = (authorStats.writingSkill?.current || 0) * 0.002;
-
-    // [신규] 필력과 인기도에 따른 publicAppealScore 보너스 배율 계산
-    const writingSkillForBonus = authorStats.writingSkill?.current || 0;
-    const popularityForBonus = authorStats.popularity?.current || 0;
-    // (필력/4)% + (인기도/10)%
-    let appealBonusRate = (writingSkillForBonus / 400) + (popularityForBonus / 1000);
-    // 최소 보너스 50% (0.5) 보장
-    appealBonusRate = Math.max(0.5, appealBonusRate); 
-    // 최종적으로 publicAppealScore에 곱해질 배율 (기본 1 + 보너스)
-    const finalAppealMultiplier = 1 + appealBonusRate;
-
-    // 1. 트렌드 보너스 계산
-    let trendMultiplier = 1.0;
-    
-    // 메인 태그 보너스 (20%)
-    if (gameState.mainTag === gameState.currentTrend.main) {
-        trendMultiplier += 0.20;
-    }
-    
-    // 서브 태그 보너스 (개당 10%)
-    let matchedSubTagsCount = 0;
-    gameState.subTags.forEach(mySubTag => {
-        if (gameState.currentTrend.subs.includes(mySubTag)) {
-            matchedSubTagsCount++;
-        }
-    });
-    trendMultiplier += matchedSubTagsCount * 0.10;
-
-    // 트렌드 보너스가 1.0 (변화 없음)보다 클 경우 로그 메시지 출력 (선택사항)
-    if (trendMultiplier > 1.0) {
-        // 이 로그는 너무 자주 뜰 수 있으므로, 필요에 따라 주석 처리하거나 조건을 더 추가하는 것이 좋습니다.
-        // addLogMessage('event', `[트렌드 효과] 트렌드 일치로 유입 보너스! (x${trendMultiplier.toFixed(1)})`, gameState.date);
-    }
-    
-    // 2. 최종 publicAppealScore 계산 (기존 로직 + 새로운 트렌드 보너스)
-    let newReaders = (baseInflow * (gameState.publicAppealScore * finalAppealMultiplier * trendMultiplier) * finalInflowMultiplier * (1 + writingQualityBonus)) + guaranteedInflow;
-    
-    newReaders *= getRandomFluctuation();
-
-    let readersPropagating = newReaders;
-    let finalRetentionRate = 0;
-    for (let i = 0; i < gameState.chapter; i++) {
-        gameState.chapterViews[i] += readersPropagating;
-        // [수정] 루프 내에서 const 제거
-        finalRetentionRate = (retentionFromSkill * eventEffects.retentionRate * gameState.retentionRateModifier);
-        readersPropagating *= Math.min(finalRetentionRate, 0.999);
-    }
-    
-    gameState.displayRetentionRate = finalRetentionRate;
-    gameState.readersReachedLatest = readersPropagating;
-
-    // --- [수정] 충성 독자 계산 로직 ---
-    const popularity = authorStats.popularity?.current || 0;
-    const mySubTags = gameState.subTags || [];
-
-    // [로직 1] 신규 유입 독자 중 일부가 즉시 충성 독자로 전환 (기존 로직 유지 및 개선)
-    // - 이것은 '첫눈에 반하는' 독자를 표현합니다. 대중적인 작품에 유리합니다.
-    const baseNewConversionRate = 0.01 + (popularity / 1000) * 0.01; // 인기도 영향 소폭 감소
-    const newLoyalReadersFromInflow = gameState.readersReachedLatest * baseNewConversionRate;
-
-    // [로직 2] 기존 독자 중 일부가 충성 독자로 전환 (신규 핵심 로직)
-    // - 이것은 '시간이 지나며 팬이 되는' 독자를 표현합니다. 마이너/매니악 장르에 유리합니다.
-    // 1. 작품의 전체 독자 풀(Pool)을 정의합니다. (예: 최신 10화 평균 조회수)
-    const recentChapterViews = gameState.chapterViews.slice(-10);
-    const existingReaderPool = recentChapterViews.length > 0
-        ? recentChapterViews.reduce((a, b) => a + b, 0) / recentChapterViews.length
-        : 0;
-
-    // 2. 기존 독자 전환율 계산 (마이너 태그 보너스가 핵심)
-    let existingConversionRate = 0.0005; // 기본 전환율은 매우 낮게 설정
-    let tagBonus = 0;
-    // 1. 보너스가 있는 태그들의 보너스 값만 추출하여 내림차순으로 정렬
-const bonusValues = mySubTags
-.map(tag => loyaltyBonusTags[tag] || 0)
-.filter(bonus => bonus > 0)
-.sort((a, b) => b - a);
-
-// 2. 점감 효과를 적용하여 최종 보너스 합산
-let diminishingRate = 1.0; // 첫 번째 태그는 100%
-bonusValues.forEach(bonus => {
-tagBonus += bonus * diminishingRate;
-diminishingRate *= 0.5; // 다음 태그의 효과는 50%로 감소
-});
-    // 태그 보너스를 기본 전환율에 '더하는' 것이 아니라 '곱해서' 극적인 효과를 냅니다.
-    // 예: '피폐' 태그가 있다면 0.0005 * (1 + 0.05) 가 아닌, 0.0005 + 0.005 와 같이 큰 보너스를 줍니다.
-    // loyaltyBonusTags의 값을 조정하여 밸런스를 맞춥니다. (아래 Tag.js 수정안 참고)
-    existingConversionRate += tagBonus;
-
-    const newLoyalReadersFromExisting = existingReaderPool * existingConversionRate;
-
-    // [최종 계산] 두 경로로 유입된 신규 충성 독자를 합산
-    gameState.loyalReaders += (newLoyalReadersFromInflow + newLoyalReadersFromExisting);
-    gameState.loyalReaders *= 0.999; // 기존의 자연 감소율은 유지
-    
-    const latestChapterIndex = gameState.chapter - 1;
-    if (latestChapterIndex >= 0) {
-        gameState.chapterViews[latestChapterIndex] += gameState.loyalReaders;
-    }
-    // --- [끝] 충성 독자 계산 로직 ---
-
+    // 선작 증가 로직
     const finalFavoriteRate = eventEffects.favoriteRate * gameState.favoriteRateModifier;
     applyEffect({
-        favoritesAbsoluteBonus: newReaders * 0.05 * finalFavoriteRate,
+        favoritesAbsoluteBonus: newReaders * 0.25 * finalFavoriteRate,
         recommendationBonus: newReaders * 0.01
     });
 

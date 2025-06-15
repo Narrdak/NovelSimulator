@@ -4,9 +4,10 @@
  */
 
 import { gameState, AppData, saveAppData } from './state.js';
-import { addLogMessage, updateUI, hideRestModal, renderAuthorHub, updateAuthorStatsDisplay, hideUpgradeModal } from './ui-manager.js';
-import { pauseGame, resumeGame } from './game-controller.js';
+import { addLogMessage, updateUI, hideRestModal, renderAuthorHub, updateAuthorStatsDisplay, hideUpgradeModal, renderAuthorActionModal } from './ui-manager.js';
+import { pauseGame, resumeGame, applyEffect, getRandomInt } from './game-controller.js';
 import { environmentItems } from './data/EnvironmentItems.js';
+import { authorActions } from './data/author-actions.js';
 
 let restIntervalId = null;
 let restDayCounter = 0;
@@ -154,4 +155,111 @@ export function upgradeEnvironmentItem(itemType) {
     updateAuthorStatsDisplay(AppData, gameState); // 헤더의 돈 업데이트
     renderAuthorHub(AppData, gameState); // 허브 패널 업데이트
 }
+
+// [신규] 작가 행동 실행 함수
+export function executeAuthorAction(actionId) {
+    const author = gameState.currentAuthor;
+    const action = authorActions.find(a => a.id === actionId);
+
+    if (!author || !action) return;
+
+    // 유효성 검사
+    if (author.authorPoints < (action.cost.point || 0)) {
+        alert('작가 포인트가 부족합니다!');
+        return;
+    }
+    if (author.stats.money < (action.cost.money || 0)) {
+        alert('소지금이 부족합니다!');
+        return;
+    }
+    if ((author.actionCooldowns[actionId] || 0) > 0) {
+        alert('아직 쿨타임이 남았습니다!');
+        return;
+    }
+
+    // 자원 소모 및 쿨타임 설정
+    author.authorPoints -= (action.cost.point || 0);
+    author.stats.money -= (action.cost.money || 0);
+    author.actionCooldowns[actionId] = action.cooldown;
+
+    let logMsg = `[작가 행동] '${action.name}'을(를) 실행했습니다.`;
+
+    // 행동 효과 적용
+    switch (actionId) {
+        case 'rest_bed':
+            author.stats.health.current = Math.min(author.stats.health.max, author.stats.health.current + 20);
+            logMsg += " (체력 +20)";
+            break;
+        case 'ego_search':
+            const mentalChange = getRandomInt(-10, 20);
+            author.stats.mental.current = Math.min(author.stats.mental.max, Math.max(0, author.stats.mental.current + mentalChange));
+            logMsg += ` (멘탈 ${mentalChange >= 0 ? '+' : ''}${mentalChange})`;
+            break;
+        case 'viral_marketing':
+            const successRate = 0.5 + (author.stats.trollingSkill.current / 500) * 0.5; // 50% ~ 100%
+            if (Math.random() < successRate) {
+                const event = randomEvents.find(e => e.name === '독자의 심층 분석');
+                if(event) {
+                    gameState.activeEvents.push({ ...event, remaining: event.duration });
+                    applyEffect(event.effect);
+                    logMsg = `[작가 행동] 뒷광고에 성공했습니다! '${event.message}'`;
+                }
+            } else {
+                const event = randomEvents.find(e => e.name === '뒷광고 발각');
+                 if(event) {
+                    gameState.activeEvents.push({ ...event, remaining: event.duration });
+                    applyEffect(event.effect);
+                    logMsg = `[작가 행동] 뒷광고에 실패했습니다... '${event.message}'`;
+                }
+            }
+            break;
+        case 'promotion': {
+            const effect = { inflowMultiplier: 2, favoritesAbsoluteBonus: 100, latestViewsAbsoluteBonus: 100, favoritesMultiplier: 1.05, latestViewsPercentBonus: 0.1 };
+            gameState.activeEvents.push({ name: '홍보 효과', message: logMsg, duration: 7, effect });
+            applyEffect(effect);
+            break;
+        }
+        case 'commission_character': {
+            const effect = { inflowMultiplier: 2, favoritesAbsoluteBonus: 200, latestViewsAbsoluteBonus: 200, favoritesMultiplier: 1.10, latestViewsPercentBonus: 0.2 };
+            gameState.activeEvents.push({ name: '캐릭터 일러스트 효과', message: logMsg, duration: 7, effect });
+            applyEffect(effect);
+            break;
+        }
+        case 'commission_cover': {
+            const effect = { inflowMultiplier: 3, favoritesAbsoluteBonus: 500, latestViewsAbsoluteBonus: 300, favoritesMultiplier: 1.20, latestViewsPercentBonus: 0.3 };
+            gameState.activeEvents.push({ name: '표지 일러스트 효과', message: logMsg, duration: 15, effect });
+            applyEffect(effect);
+            break;
+        }
+        case 'writing_class':
+            const skillUp = getRandomInt(5, 20);
+            author.stats.writingSkill.current = Math.min(author.stats.writingSkill.max, author.stats.writingSkill.current + skillUp);
+            logMsg += ` (필력 +${skillUp})`;
+            break;
+        case 'trolling_class':
+            const trollUp = getRandomInt(5, 20);
+            author.stats.trollingSkill.current = Math.min(author.stats.trollingSkill.max, author.stats.trollingSkill.current + trollUp);
+            logMsg += ` (어그로 +${trollUp})`;
+            break;
+        case 'potential_training':
+            const potentialChange = getRandomInt(-5, 5);
+            author.stats.potentialSkill.current = Math.min(author.stats.potentialSkill.max, Math.max(0, author.stats.potentialSkill.current + potentialChange));
+            logMsg += ` (영근 ${potentialChange >= 0 ? '+' : ''}${potentialChange})`;
+            break;
+        case 'sns_activity':
+            const popChange = getRandomInt(-10, 10);
+            author.stats.popularity.current = Math.min(author.stats.popularity.max, Math.max(0, author.stats.popularity.current + popChange));
+            logMsg += ` (인기도 ${popChange >= 0 ? '+' : ''}${popChange})`;
+            break;
+    }
+
+    addLogMessage('system', logMsg, gameState.date);
+    
+    // 데이터 저장 및 UI 갱신
+    saveAppData();
+    renderAuthorActionModal(); // 모달 내부 UI 갱신
+    updateUI(gameState, AppData);
+    updateAuthorStatsDisplay(AppData, gameState);
+}
+
 // --- END OF FILE player-controller.js ---

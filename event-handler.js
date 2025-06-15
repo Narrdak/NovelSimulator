@@ -7,7 +7,7 @@ import { gameState, setGameState } from './state.js';
 import { randomEvents } from './data/RandEvents.js';
 import { playerChoiceEvents } from './data/PlayEvents.js';
 import { applyEffect, pauseGame, resumeGame, endGame } from './game-controller.js';
-import { showChoiceEventModal, addLogMessage, updateUI } from './ui-manager.js';
+import { showChoiceEventModal, addLogMessage, updateUI, updateMarquee } from './ui-manager.js';
 
 
 /**
@@ -109,6 +109,8 @@ export function handleRandomEvents() {
         if (newEvent.effect.favoritesPenaltyRate || newEvent.effect.favoritesAbsolutePenalty) type = 'penalty';
         
         addLogMessage(type, `[이벤트] ${newEvent.message}`, gameState.date);
+
+        updateMarquee();
     }
 }
 
@@ -134,10 +136,17 @@ export function showChoiceEvent(event) {
  * 현재 활성화된 이벤트들의 남은 기간을 갱신합니다.
  */
 export function updateActiveEvents() {
+    // [오류 수정] const로 initialLength를 올바르게 선언합니다.
+    const initialLength = gameState.activeEvents.length;
+    
     gameState.activeEvents.forEach(e => e.remaining--);
     gameState.activeEvents = gameState.activeEvents.filter(e => e.remaining > 0);
-}
 
+    // 이벤트 목록의 길이가 변경되었다면 (즉, 이벤트가 종료되었다면) 전광판을 업데이트합니다.
+    if (gameState.activeEvents.length !== initialLength) {
+        updateMarquee();
+    }
+}
 /**
  * 현재 활성화된 모든 이벤트의 효과를 종합하여 반환합니다.
  * @returns {object} 종합된 이벤트 효과 객체

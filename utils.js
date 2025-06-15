@@ -3,7 +3,7 @@
  * @file 이 파일은 게임의 특정 계산을 담당하는 순수 함수들을 포함합니다.
  *       게임 상태에 직접 의존하지 않는 보조적인 유틸리티 함수 모음입니다.
  */
-import { tagCompatibility, mainTagPenalties, conflictingTagPairs } from './data/Tag.js';
+import { tagCompatibility, mainTagPenalties, conflictingTagPairs,mainTags, subTags } from './data/Tag.js';
 import { rankingTiers } from './data/Misc.js';
 import { addLogMessage } from './ui-manager.js';
 
@@ -123,6 +123,17 @@ export function getViewsModifier(views) {
         const ratio = (views - baseViews) / (maxViews - baseViews);
         return baseModifier + (maxModifier - baseModifier) * ratio;
     }
+}
+
+/**
+ * [신규] 랜덤하게 새로운 트렌드를 생성하여 반환하는 함수
+ * @returns {{main: string, subs: string[]}} 새로운 트렌드 객체
+ */
+export function generateNewTrend() {
+    const mainTrend = mainTags[Math.floor(Math.random() * mainTags.length)];
+    const shuffledSubs = [...subTags].sort(() => 0.5 - Math.random());
+    const subTrends = shuffledSubs.slice(0, 5);
+    return { main: mainTrend, subs: subTrends };
 }
 
 // --- END OF FILE utils.js ---

@@ -3,42 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>월천킥 작가 시뮬레이터! Beta 4.0</title>
+    <title>작가쨩 키우기 1.0 : Road to the 월천킥!</title>
     <!-- 외부 라이브러리 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <!-- 분리된 CSS 파일 -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <!-- [수정] 고정 글로벌 헤더 -->
-    <div id="global-header" style="display: none;">
-        <!-- 왼쪽: 작가 프로필 -->
-        <div id="header-author-profile">
-            <img id="header-author-img" src="./asset/image/profile_placeholder.png" alt="작가 프로필">
-            <div class="profile-text-info">
-                <div id="header-author-name-level"><!-- JS --></div>
-                <div class="stat-row">
-                    <i class="fa-solid fa-star"></i>
-                    <div class="stat-bar">
-                        <div id="header-exp-bar-fill" class="stat-bar-fill"></div>
-                        <span id="header-exp-value" class="stat-value-inside"></span>
+    <body>
+        <!-- [수정] 고정 글로벌 헤더 -->
+        <div id="global-header" style="display: none;">
+            <!-- 왼쪽: 작가 프로필 -->
+            <div id="header-author-profile">
+                <img id="header-author-img" src="./asset/image/profile_placeholder.png" alt="작가 프로필">
+                <div class="profile-text-info">
+                    <div id="header-author-name-level"><!-- JS --></div>
+                    <div class="stat-row">
+                        <i class="fa-solid fa-star"></i>
+                        <div class="stat-bar">
+                            <div id="header-exp-bar-fill" class="stat-bar-fill"></div>
+                            <span id="header-exp-value" class="stat-value-inside"></span>
+                        </div>
                     </div>
                 </div>
             </div>
+            <!-- 중앙 정보 -->
+            <div class="date-money-info">
+                <div id="header-date"><i class="fa-solid fa-calendar-alt"></i> <span></span></div>
+                <div id="header-money"><i class="fa-solid fa-coins"></i> <span></span></div>
+            </div>
+            <div id="header-stats-container">
+                <div id="header-main-stats"><!-- 체력/멘탈 바 JS로 채워짐 --></div>
+            </div>
         </div>
-        <!-- [수정] 중앙 정보 전체 래퍼 제거, 각 요소를 헤더의 직계 자식으로 변경 -->
-<div class="date-money-info">
-    <div id="header-date"><i class="fa-solid fa-calendar-alt"></i> <span></span></div>
-    <div id="header-money"><i class="fa-solid fa-coins"></i> <span></span></div>
-</div>
-<div id="header-stats-container">
-    <div id="header-main-stats"><!-- 체력/멘탈 바 JS로 채워짐 --></div>
-    <div id="header-sub-stats"><!-- 나머지 스탯 JS로 채워짐 --></div>
-</div>
-    </div>
-
-    <div id="app-wrapper">
+        
+        <!-- [수정] 전광판 컨테이너를 global-header 밖으로 이동 -->
+        <div id="marquee-container">
+            <div id="marquee-content">
+                <!-- JS로 내용이 채워집니다. -->
+            </div>
+        </div>
+    
+        <div id="app-wrapper">
         <div class="container">
             <!-- [메인 소개 화면] -->
             <div id="main-screen">
@@ -46,48 +52,32 @@
                     <img src="./asset/image/game_title.png" alt="게임 타이틀" class="intro-title-img">
                     <p class="intro-description" style="margin: 20px 0;">웹소설 작가의 치열한 하루를 체험해보세요!<br>집필·연재·홍보·독자 관리까지! 월천킥을 향한 여정을 시작해보세요.</p>
                     <div class="patch-notes" style="margin: 20px 0;">
-                        <h3>📜 최신 패치 내역</h3>
+                        <h3>📜 게임 특징</h3>
                         <ul style="text-align: left; display: inline-block;">
-                            <li>Phase 4 – 작가 스탯 UI 및 사이드바 통합</li>
-                            <li>Phase 3 – 작가 스테이터스 시스템 도입</li>
-                            <li>Phase 2 – 작품·이벤트 시뮬레이션 개선</li>
+                            <li>작품 집필: 독특한 컨셉과 태그 조합으로 작품을 창조하세요.</li>
+                            <li>독자 관리: 수많은 독자들의 반응에 울고 웃으며 그들의 마음을 사로잡으세요.</li>
+                            <li>작가 성장: 작품을 완결내고 얻는 보상으로 작가의 스탯을 성장시켜 다음 작품에서 더 높은 곳을 노리세요.</li>
+                            <li>작가 성장: 작품을 완결내고 얻는 보상으로 작가의 스탯을 성장시켜 다음 작품에서 더 높은 곳을 노리세요.</li>
                         </ul>
                     </div>
                     <button id="intro-start-button" class="btn-primary" style="margin-top:20px;">작가 선택 화면으로 이동</button>
                 </div>
             </div>
 
-            <!-- 작가 선택/생성 화면 -->
             <div id="author-screen" style="display: none;">
                 <h1>나의 작가 목록</h1>
                 <div id="author-list-container" class="list-container"></div>
                 <button id="show-create-author-form-button" class="btn-primary">새 작가 생성</button>
-                <div id="create-author-form" style="display: none;" class="form-section">
-                    <h2>새 작가 생성</h2>
-                    <div class="form-group">
-                        <label for="new-author-name">작가명 (필명)</label>
-                        <input type="text" id="new-author-name" placeholder="독자들이 기억할 필명을 지어주세요">
-                    </div>
-                    <div class="form-group">
-                        <label for="new-author-bio">작가 소개</label>
-                        <textarea id="new-author-bio" placeholder="자신을 어필할 멋진 소개를 작성해보세요"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>프로필 이미지</label>
-                        <div id="profile-image-presets"></div>
-                        <input type="file" id="profile-image-upload" accept="image/*" style="margin-top: 10px;">
-                    </div>
-                    <button id="create-author-button" class="btn-success">이 작가로 시작하기</button>
-                    <button id="cancel-create-author-button" class="btn-secondary">취소</button>
-                </div>
             </div>
 
             <!-- 작품 목록 화면 -->
-            <div id="work-list-screen" style="display: none;">
-                <h1>나의 작품 목록</h1>
-                <div id="work-list-container" class="list-container"></div>
-                <button id="show-create-work-screen-button" class="btn-primary">새 작품 집필하기</button>
-            </div>
+<div id="work-list-screen" style="display: none;">
+    <h1>나의 작품 목록</h1>
+    <div id="work-list-container" class="list-container"></div>
+    <!-- [수정] 버튼 2개를 추가하고, 이어하기 버튼은 기본 숨김 -->
+    <button id="continue-writing-button" class="btn-success" style="display: none;">이어서 집필하기</button>
+    <button id="show-create-work-screen-button" class="btn-primary">새 작품 집필하기</button>
+</div>
 
             <!-- 작품 생성 화면 -->
             <div id="work-creation-screen" style="display: none;">
@@ -108,37 +98,60 @@
 
             <!-- 시뮬레이션 화면 -->
             <div id="simulation-screen" style="display: none;">
-                <h2 id="novel-title-display"></h2>
-                <p id="author-name-display"></p>
-                <p id="novel-tags-display"></p>
-                <p id="novel-synopsis-display"></p>
-                <div class="earnings-info-bar">
-                    <span id="writing-time-per-chapter"></span>
-                    <span id="current-earnings"></span>
-                    <span id="current-hourly-wage"></span>
-                </div>
+                <div id="collapsible-work-info" class="collapsed-info">
+                    <div class="work-title-header">
+                        <h2 id="novel-title-display"></h2>
+                        <button id="toggle-work-info-button" class="btn-toggle-info" title="정보 펼치기">
+                            <i class="fa-solid fa-chevron-up"></i>
+                        </button>
+                    </div>
+
+                    <p id="author-name-display"></p>
+                    <p id="novel-tags-display"></p>
+                    <p id="novel-synopsis-display"></p>
+                    <div class="earnings-info-bar">
+                        <span id="writing-time-per-chapter"></span>
+                        <span id="current-earnings"></span>
+                        <span id="current-hourly-wage"></span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <!-- 항상 보이는 스탯 -->
+                        <div class="stat-box"><div class="label">현재 화수</div><div id="current-chapter" class="value">0</div></div>
+                        <div class="stat-box"><div class="label">총 조회수</div><div id="total-views" class="value">0</div></div>
+                        <div class="stat-box"><div class="label">1화 조회수</div><div id="first-chapter-views" class="value">0</div></div>
+                        <div class="stat-box"><div class="label">최신화 조회수</div><div id="latest-chapter-views" class="value">0</div></div>
+                        <div class="stat-box"><div class="label">실시간 랭킹</div><div id="realtime-ranking" class="value">순위권 밖</div></div>
+                        <div class="stat-box"><div class="label">충성 독자 수</div><div id="loyal-readers" class="value">0</div></div>
+                        
+                        <!-- [수정] 접었을 때 숨겨질 스탯 (stat-box-full 클래스 추가) -->
+                        <div class="stat-box stat-box-full"><div class="label">현재 연독률</div><div id="current-retention-rate" class="value">0%</div></div>
+                        <div class="stat-box stat-box-full"><div class="label">총 선호작</div><div id="total-favorites" class="value">0</div></div>
+                        <div class="stat-box stat-box-full"><div class="label">하이프 지수</div><div id="hype-meter" class="value">100%</div></div>
+                        <div class="stat-box stat-box-full"><div class="label">최고 최신화 조회수</div><div id="peak-latest-views" class="value">0</div></div>
+                        <div class="stat-box stat-box-full"><div class="label">최고 일일 조회수</div><div id="peak-daily-growth" class="value">0</div></div>
+                        <div class="stat-box stat-box-full"><div class="label">최고 실시간 랭킹</div><div id="peak-realtime-ranking" class="value">순위권 밖</div></div>
+                    </div>
+                </div> <!-- /collapsible-work-info -->
+            
+                <!-- ▼▼▼ 이 아래는 항상 보이는 영역 ▼▼▼ -->
+
                 <div class="speed-control-bar">
+                    <button id="check-chapter-info-button" class="speed-button"><i class="fa-solid fa-magnifying-glass-chart"></i> 회차 정보</button>
+                    <button id="show-author-action-button" class="speed-button"><i class="fa-solid fa-bolt-lightning"></i> 작가 행동</button>
+                    <span style="border-left: 1px solid var(--border-color); margin: 0 5px;"></span>
+                    <button id="save-game-button" class="speed-button"><i class="fa-solid fa-save"></i> 저장하기</button>
+                    <button id="stop-writing-button" class="speed-button" style="color: var(--red-color);"><i class="fa-solid fa-ban"></i> 연재 중단</button>
+                    
+                    <!-- [핵심 수정] 이 div가 줄 바꿈을 유발하는 역할을 합니다. -->
+                    <div class="flex-break"></div>
+                    
+                    <button id="pause-toggle-button" class="speed-button"><i class="fa-solid fa-pause"></i> 일시정지</button>
                     <button id="speed-1x" class="speed-button active">1배속</button>
                     <button id="speed-1_5x" class="speed-button">1.5배속</button>
                     <button id="speed-2x" class="speed-button">2배속</button>
                     <button id="speed-4x" class="speed-button">4배속</button>
                 </div>
-                <div class="stats-grid">
-                    <div class="stat-box"><div class="label">현재 화수</div><div id="current-chapter" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">총 조회수</div><div id="total-views" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">1화 조회수</div><div id="first-chapter-views" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">최신화 조회수</div><div id="latest-chapter-views" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">실시간 랭킹</div><div id="realtime-ranking" class="value">순위권 밖</div></div>
-                    <div class="stat-box"><div class="label">현재 연독률</div><div id="current-retention-rate" class="value">0%</div></div>
-                    <div class="stat-box"><div class="label">충성 독자 수</div><div id="loyal-readers" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">총 선호작</div><div id="total-favorites" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">하이프 지수</div><div id="hype-meter" class="value">100%</div></div>
-                    <div class="stat-box"><div class="label">최고 최신화 조회수</div><div id="peak-latest-views" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">최고 일일 조회수</div><div id="peak-daily-growth" class="value">0</div></div>
-                    <div class="stat-box"><div class="label">최고 실시간 랭킹</div><div id="peak-realtime-ranking" class="value">순위권 밖</div></div>
-                    
-                </div>
-            
                 <div>
                     <h3 class="section-title">현재 에피소드 진행도</h3>
                     <div id="narrative-progress-container">
@@ -156,10 +169,16 @@
             </div>
 
             <!-- 작가 정보 허브 화면 -->
-            <!-- 작가 정보 허브 화면 -->
 <div id="author-hub-screen" class="container" style="display: none;">
     <div id="hub-content-wrapper" style="display: flex; flex-wrap: wrap; gap: 30px;">
         
+        <!-- [신규] 작가 스테이터스 패널 추가 -->
+        <div id="hub-status-panel" style="flex: 1; min-width: 300px;">
+            <h3 class="section-title">작가 스테이터스</h3>
+            <div id="status-items-container">
+                <!-- JS로 채워집니다 -->
+            </div>
+        </div>
         <!-- [수정] '작가 정보' 패널을 '작가 거주 환경' 패널로 교체 -->
         <div id="hub-environment-panel" style="flex: 1; min-width: 300px;">
             <h3 class="section-title">작가 거주 환경</h3>
@@ -322,6 +341,65 @@
             <p style="color: var(--subtext-color); margin: 20px 0;">이 기능은 현재 준비 중입니다. 어떤 멋진 아이템들이 기다리고 있을까요?</p>
         </div>
         <button id="close-upgrade-modal-button" class="btn-secondary" style="margin-top: 20px;">닫기</button>
+    </div>
+</div>
+
+<!-- [신규] 회차 정보 확인 모달 -->
+<div id="chapter-info-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <h2><i class="fa-solid fa-magnifying-glass-chart"></i> 회차별 상세 정보</h2>
+        <p style="color: var(--subtext-color); margin-bottom: 20px;">
+            현재 게임 시점의 회차별 누적 조회수와 활동 독자 수입니다.
+        </p>
+        <div id="chapter-info-content" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
+            <!-- JS로 내용이 채워집니다. -->
+        </div>
+        <button id="close-chapter-info-button" class="btn-secondary" style="margin-top: 20px;">닫고 이어하기</button>
+    </div>
+</div>
+
+<!-- [신규] 작가 행동 모달 -->
+<div id="author-action-modal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header-flex">
+            <h2><i class="fa-solid fa-bolt-lightning"></i> 작가 행동</h2>
+            <div id="author-points-display" class="points-display">
+                <i class="fa-solid fa-star"></i> 작가 포인트: <span>0</span>
+            </div>
+        </div>
+        <p style="color: var(--subtext-color); margin-bottom: 20px;">
+            누적된 작가 포인트를 사용하여 작품에 직접 개입할 수 있습니다.
+        </p>
+        <div id="author-action-content" class="action-grid">
+            <!-- JS로 내용이 채워집니다. -->
+        </div>
+        <button id="close-author-action-button" class="btn-secondary" style="margin-top: 20px;">닫기</button>
+    </div>
+</div>
+
+<!-- ▼▼▼ 여기에 새 작가 생성 모달을 추가합니다 ▼▼▼ -->
+<div id="create-author-modal" class="modal">
+    <div class="modal-content">
+        <!-- 잘라낸 폼을 여기에 붙여넣습니다. -->
+        <div id="create-author-form" class="form-section" style="border-top: none; margin-top: 0;">
+            <h2>새 작가 생성</h2>
+            <div class="form-group">
+                <label for="new-author-name">작가명 (필명)</label>
+                <input type="text" id="new-author-name" placeholder="독자들이 기억할 필명을 지어주세요">
+            </div>
+            <div class="form-group">
+                <label for="new-author-bio">작가 소개</label>
+                <textarea id="new-author-bio" placeholder="자신을 어필할 멋진 소개를 작성해보세요"></textarea>
+            </div>
+            <div class="form-group">
+                <label>프로필 이미지</label>
+                <div id="profile-image-presets"></div>
+            </div>
+            <!-- [수정] 버튼들을 div로 감싸줍니다. -->
+            <div class="modal-form-actions">
+                <button id="cancel-create-author-button" class="btn-secondary">취소</button>
+                <button id="create-author-button" class="btn-success">작가 생성</button>
+            </div>
     </div>
 </div>
 

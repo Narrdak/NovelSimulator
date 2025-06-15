@@ -6,13 +6,16 @@
 import { mainTags, subTags, categorizedSubTags } from './data/Tag.js';
 import { getRealtimeRanking, getRankValue } from './utils.js';
 import { gameState, AppData } from './state.js';
-import { stopHomeRest } from './player-controller.js';
-import { deleteAuthor } from './storage-manager.js';
+import { stopHomeRest, upgradeEnvironmentItem, executeAuthorAction } from './player-controller.js';
+import { deleteAuthor, loadInProgressGame } from './storage-manager.js';
+import { authorActions } from './data/author-actions.js';
+import { pauseGame } from './game-controller.js';
 import { environmentItems } from './data/EnvironmentItems.js';
-import { upgradeEnvironmentItem } from './player-controller.js';
 
 let dailyGrowthChart, latestViewsTrendChart;
 let selectedProfileImage = null;
+let marqueeInterval = null;
+
 export const allScreens = ['main-screen','author-screen', 'work-list-screen', 'work-creation-screen', 'simulation-screen', 'author-hub-screen'];
 
 export function hideAllScreens() {
@@ -37,10 +40,21 @@ export function getVisibleScreenId() {
 export function showScreen(screenId, appData, gameState) {
     hideAllScreens();
     const screen = document.getElementById(screenId);
-    if(screen) {
+    if (screen) {
         screen.style.display = 'block';
     }
     updateAuthorStatsDisplay(appData, gameState);
+
+    // [핵심 수정] 화면이 표시된 후, 해당 화면에 맞는 그리기 함수를 호출합니다.
+    switch (screenId) {
+        case 'author-screen':
+            renderAuthorScreen(appData, gameState);
+            break;
+        case 'work-list-screen':
+            // work-list-screen은 showWorkListScreen 함수가 자체적으로 호출하므로 여기서 제외합니다.
+            break;
+        // 다른 화면에 대한 렌더링 함수도 필요하면 여기에 추가할 수 있습니다.
+    }
 }
 
 function createAuthorItemElement(author, appData, gameState) {
@@ -147,8 +161,22 @@ export function renderWorkListScreen(author, appData, gameState) {
 export function showWorkListScreen(author, appData, gameState) {
     gameState.currentAuthor = author;
     gameState.date = new Date(author.stats.currentDate);
+    gameState.currentTrend = JSON.parse(JSON.stringify(AppData.gameSettings.currentTrend));
     showScreen('work-list-screen', appData, gameState);
     renderWorkListScreen(author, appData, gameState);
+    updateMarquee();
+
+    // [신규] 저장된 게임 데이터 유무에 따라 버튼 표시를 제어합니다.
+    const continueBtn = document.getElementById('continue-writing-button');
+    const newWorkBtn = document.getElementById('show-create-work-screen-button');
+    
+    if (loadInProgressGame()) {
+        continueBtn.style.display = 'inline-block';
+        newWorkBtn.style.display = 'none';
+    } else {
+        continueBtn.style.display = 'none';
+        newWorkBtn.style.display = 'inline-block';
+    }
 }
 
 export function renderLeaderboard(authors) {
@@ -330,6 +358,16 @@ export function updateUI(gameState, appData) {
     progressFill.className = `narrative-progress-fill ${stateClass}`;
     statusText.textContent = `${stateText} (${progress.toFixed(0)}%)`;
 
+    // [신규] [연재 중단] 버튼 텍스트를 동적으로 변경합니다.
+    const stopButton = document.getElementById('stop-writing-button');
+    if (stopButton) {
+        if (gameState.chapter >= 100) {
+            stopButton.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> 완결 선언';
+        } else {
+            stopButton.innerHTML = '<i class="fa-solid fa-ban"></i> 연재 중단';
+        }
+    }
+    
     updateAuthorStatsDisplay(appData, gameState);
 }
 
@@ -472,7 +510,13 @@ export function getSelectedProfileImage() { return selectedProfileImage; }
 export function renderProfileImagePresets() {
     const container = document.getElementById('profile-image-presets');
     container.innerHTML = '';
-    const presets = ['./asset/image/profile1.png', './asset/image/profile2.png', './asset/image/profile3.png'];
+    
+    const presets = [
+        './asset/image/profile1.png', './asset/image/profile2.png', './asset/image/profile3.png', './asset/image/profile4.png',
+        './asset/image/profile5.png', './asset/image/profile6.png', './asset/image/profile7.png', './asset/image/profile8.png',
+        './asset/image/profile9.png', './asset/image/profile10.png', './asset/image/profile11.png', './asset/image/profile12.png',
+        './asset/image/profile13.png', './asset/image/profile14.png'
+    ];
     
     presets.forEach(src => {
         const img = document.createElement('img');
@@ -482,22 +526,11 @@ export function renderProfileImagePresets() {
             document.querySelectorAll('.profile-preset').forEach(p => p.classList.remove('selected'));
             e.target.classList.add('selected');
             selectedProfileImage = src;
-            document.getElementById('profile-image-upload').value = ''; 
         };
         container.appendChild(img);
     });
     
-    document.getElementById('profile-image-upload').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                selectedProfileImage = event.target.result;
-                document.querySelectorAll('.profile-preset').forEach(p => p.classList.remove('selected'));
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+    // [수정 2] 파일 업로드 관련 addEventListener 전체를 제거합니다.
 }
 
 function createStatBar(icon, label, current, max) {
@@ -524,7 +557,8 @@ export function updateAuthorStatsDisplay(appData, gameState) {
     sidebarActions.innerHTML = '';
 
     if (!gameState || !gameState.currentAuthor || !gameState.currentAuthor.stats) {
-        header.style.display = 'none'; // 작가 없으면 헤더 숨김
+        header.style.display = 'none';
+        document.getElementById('marquee-container').style.display = 'none'; // 전광판 숨김
         sidebarPlaceholder.innerHTML = `
             <div style="color: var(--subtext-color); font-size: 0.9em; text-align: center; margin-bottom: 15px;">작가를 선택하거나 생성해주세요.</div>
             <button id="go-to-author-select-button" class="btn-secondary" style="width: 100%;">작가 선택 화면으로</button>
@@ -532,14 +566,16 @@ export function updateAuthorStatsDisplay(appData, gameState) {
         const btn = document.getElementById('go-to-author-select-button');
         if (btn) {
             btn.onclick = () => {
+                // [핵심 수정] 이제 showScreen만 호출하면 됩니다. 렌더링은 showScreen이 알아서 합니다.
                 showScreen('author-screen', appData, gameState);
-                renderAuthorScreen(appData, gameState);
             };
         }
         return;
     }
 
     header.style.display = 'flex'; // 작가 있으면 헤더 표시
+    document.getElementById('marquee-container').style.display = 'flex'; // 전광판 표시
+    
     const { name, profileImage, stats } = gameState.currentAuthor;
     const r = (v) => Math.round(v);
 
@@ -580,16 +616,93 @@ export function updateAuthorStatsDisplay(appData, gameState) {
     mainStatsContainer.appendChild(createStatBar('fa-solid fa-heart-pulse', '체력', stats.health.current, stats.health.max));
     mainStatsContainer.appendChild(createStatBar('fa-solid fa-brain', '멘탈', stats.mental.current, stats.mental.max));
 
-    // 서브 스탯 텍스트 업데이트
-    const subStatsContainer = document.getElementById('header-sub-stats');
-    subStatsContainer.innerHTML = `
-        <div class="header-stat-item"><i class="fa-solid fa-pen-nib"></i> <span class="stat-title">필력:</span> ${r(stats.writingSkill.current)}/${stats.writingSkill.max}</div>
-        <div class="header-stat-item"><i class="fa-solid fa-bolt"></i> <span class="stat-title">어그로:</span> ${r(stats.trollingSkill.current)}/${stats.trollingSkill.max}</div>
-        <div class="header-stat-item"><i class="fa-solid fa-seedling"></i> <span class="stat-title">영근:</span> ${r(stats.potentialSkill.current)}/${stats.potentialSkill.max}</div>
-        <div class="header-stat-item"><i class="fa-solid fa-fire"></i> <span class="stat-title">인기도:</span> ${r(stats.popularity.current)}/${stats.popularity.max}</div>
-    `;
 }
 
+export function updateMarquee() {
+    const marqueeContent = document.getElementById('marquee-content');
+    if (!marqueeContent) return;
+
+    let messages = [];
+
+    // 작가 메시지 추가
+
+    const devMessages = [
+        "작가쨩 키우기 1.0 : Road to the 월천킥!에 오신 것을 환영합니다!",
+        "버그나 건의사항은 언제든 피드백 주세요!",
+        "당신의 월천킥을 응원합니다!",
+        "오늘은 어떤 대작이 탄생할까요?",
+        "서명하시오. 폰무림은 정통 무협이다!",
+        "오늘도 노벨쨩이 서버에 떡볶이를 쏟았다는 음모론이 돌고 있습니다.",
+        "완벽한 첫 문장을 기다리지 마세요. 일단 써보세요!",
+        "캐릭터가 말을 안 들을 때는 그들과 대화해보세요",
+        "막히면 주인공을 위험에 빠뜨려보세요",
+        "독자들은 당신이 생각하는 것보다 훨씬 똑똑합니다",
+        "오늘의 한 줄이 내일의 명작이 됩니다",
+        "스토리보드? 그런 건 고수나 쓰는 거죠",
+        "설정충돌은 작가의 숙명입니다",
+        "작가의 삶: 99% 고민, 1% 타이핑",
+        "창작의 신이 당신에게 미소짓고 있습니다... 어? 잘못 봤나?",
+        "플롯홀을 발견했다고요? 그건 복선입니다!",
+        "등장인물들이 파업을 선언했습니다",
+        "오늘의 뇌내망상 to 작품화 성공률: 13%",
+        "독자님들의 최애캐는 누구일까요? (작가는 모름)",
+        "설정집이 본편보다 두꺼워지고 있습니다",
+        "휘둘러라. 이미 네 안에 있다!",
+        "댓글 하나하나가 작가의 보약입니다",
+        "독자들의 추리력 앞에서는 모든 복선이 무력화됩니다",
+        "별점 0.1이라도 올라가면 춤추고 싶은 마음",
+        "독자님들, 스포일러는 살짝만 해주세요...",
+        "조회수보다 중요한 건 진심 어린 독자 한 명과 따스한 댓글",
+        "커피 한 잔과 함께 시작하는 창작의 여정!",
+        "오늘도 키보드 위에서 춤추는 손가락들...",
+        "마감이 코앞인데 아직도 1화를 고민 중이신가요?",
+        "새벽 3시, 진정한 작가의 시간이 시작됩니다",
+        "라면 끓이는 시간에 한 화 완성하기 도전!",
+        "오타를 찾는 것도 하나의 예술입니다",
+        "작가님의 상상력 충전량: 87%",
+        "스마트폰 IN 무림학관, 많관부!",
+        "대롱닥은 대롱대롱 하고 울어용!",
+    ];
+
+    const randomMessage2 = devMessages[Math.floor(Math.random() * devMessages.length)];
+    messages.push(`<span class="dev-message">${randomMessage2}</span>`);
+
+    // 1. 트렌드 정보 추가
+    if (gameState && gameState.currentTrend && gameState.currentTrend.main) {
+        const trend = gameState.currentTrend;
+        const trendMessage = `[${trend.lastUpdated + 1}월 트렌드] 메인: <span class="trend-tag">#${trend.main}</span>, 서브: <span class="trend-tag">#${trend.subs.join(', #')}</span>`;
+        messages.push(trendMessage);
+    } else {
+        messages.push("아직 이번 달 트렌드 정보가 없습니다.");
+    }
+
+    // 2. 활성 이벤트 정보 추가
+    if (gameState && gameState.activeEvents && gameState.activeEvents.length > 0) {
+        const eventNames = gameState.activeEvents.map(e => e.name).join(', ');
+        const activeEventsMessage = `<span style="color: var(--green-color);">[현재 적용중인 이벤트: ${eventNames}]</span>`;
+        messages.push(activeEventsMessage);
+    } else {
+
+        
+        const randomMessage3 = devMessages[Math.floor(Math.random() * devMessages.length)];
+        messages.push(`<span class="dev-message">${randomMessage3}</span>`);
+
+    }
+
+    // 3. 개발자 메시지 추가
+    const randomDevMessage = devMessages[Math.floor(Math.random() * devMessages.length)];
+    messages.push(`<span class="dev-message">${randomDevMessage}</span>`);
+
+    // 최종 HTML 생성 (각 메시지를 span으로 감싸 간격을 줌)
+    marqueeContent.innerHTML = messages.map(msg => `<span>${msg}</span>`).join('');
+}
+
+
+export function setupMarquee() {
+    if (marqueeInterval) clearInterval(marqueeInterval);
+    updateMarquee(); // 즉시 한 번 실행
+    marqueeInterval = setInterval(updateMarquee, 30000); // 30초마다 업데이트
+}
 
 // 휴식 모달 제어 함수
 export function showRestModal() {
@@ -599,9 +712,39 @@ export function hideRestModal() {
     document.getElementById('rest-modal').style.display = 'none';
 }
 
+export function renderStatusPanel(author) {
+    const container = document.getElementById('status-items-container');
+    if (!container) return;
+
+    const { stats } = author;
+    const r = (v) => Math.round(v);
+
+    container.innerHTML = `
+        <div class="status-item">
+            <div class="status-header"><i class="fa-solid fa-pen-nib"></i> <span>필력</span></div>
+            <div class="status-value">${r(stats.writingSkill.current)} / ${stats.writingSkill.max}</div>
+        </div>
+        <div class="status-item">
+            <div class="status-header"><i class="fa-solid fa-bolt"></i> <span>어그로</span></div>
+            <div class="status-value">${r(stats.trollingSkill.current)} / ${stats.trollingSkill.max}</div>
+        </div>
+        <div class="status-item">
+            <div class="status-header"><i class="fa-solid fa-seedling"></i> <span>영근</span></div>
+            <div class="status-value">${r(stats.potentialSkill.current)} / ${stats.potentialSkill.max}</div>
+        </div>
+        <div class="status-item">
+            <div class="status-header"><i class="fa-solid fa-fire"></i> <span>인기도</span></div>
+            <div class="status-value">${r(stats.popularity.current)} / ${stats.popularity.max}</div>
+        </div>
+    `;
+}
+
 export function renderAuthorHub(appData, gameState) {
     const author = gameState.currentAuthor;
     if (!author) return;
+
+    // [신규] 스테이터스 패널 렌더링
+    renderStatusPanel(author);
 
     renderEnvironmentPanel(author);
 
@@ -722,4 +865,128 @@ export function showUpgradeModal(itemType, author) {
 // [신규] 업그레이드 모달을 숨기는 함수
 export function hideUpgradeModal() {
     document.getElementById('upgrade-modal').style.display = 'none';
+}
+
+// [신규] 회차 정보 확인 모달을 표시하는 함수
+export function showChapterInfoModal() {
+    const modal = document.getElementById('chapter-info-modal');
+    const content = document.getElementById('chapter-info-content');
+    
+    // [수정] 연독률 컬럼 추가
+    let tableHTML = `
+        <table style="width: 100%; border-collapse: collapse; text-align: right;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--primary-color);">
+                    <th style="padding: 8px; text-align: center;">회차</th>
+                    <th style="padding: 8px;">누적 조회수</th>
+                    <th style="padding: 8px;">활동 독자 수</th>
+                    <th style="padding: 8px;">연독률</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    for (let i = 0; i < gameState.chapter; i++) {
+        const views = gameState.chapterViews[i] || 0;
+        const readers = gameState.activeReaders[i] || 0;
+        let retentionRateText = 'N/A'; // 1화는 연독률 계산 불가
+
+        if (i > 0) {
+            const prevViews = gameState.chapterViews[i - 1] || 0;
+            if (prevViews > 0) {
+                const rate = (views / prevViews) * 100;
+                retentionRateText = `${rate.toFixed(1)}%`;
+            } else {
+                retentionRateText = '∞'; // 직전 화 조회수가 0일 경우
+            }
+        }
+
+        tableHTML += `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 6px; text-align: center;">${i + 1}화</td>
+                <td style="padding: 6px;">${Math.floor(views).toLocaleString()}</td>
+                <td style="padding: 6px;">${Math.floor(readers).toLocaleString()}</td>
+                <td style="padding: 6px;">${retentionRateText}</td>
+            </tr>
+        `;
+    }
+
+    tableHTML += `</tbody></table>`;
+    content.innerHTML = tableHTML;
+    modal.style.display = 'flex';
+}
+
+// [신규] 회차 정보 확인 모달을 숨기는 함수
+export function hideChapterInfoModal() {
+    document.getElementById('chapter-info-modal').style.display = 'none';
+}
+
+
+// [신규] 작가 행동 모달 렌더링 함수
+export function renderAuthorActionModal() {
+    const author = gameState.currentAuthor;
+    if (!author) return;
+
+    const pointsEl = document.querySelector('#author-points-display span');
+    pointsEl.textContent = author.authorPoints.toLocaleString();
+
+    const content = document.getElementById('author-action-content');
+    content.innerHTML = '';
+
+    authorActions.forEach(action => {
+        const button = document.createElement('button');
+        button.className = 'action-button';
+        button.dataset.actionId = action.id;
+
+        const remainingCooldown = author.actionCooldowns[action.id] || 0;
+        const canAffordPoints = author.authorPoints >= (action.cost.point || 0);
+        const canAffordMoney = author.stats.money >= (action.cost.money || 0);
+
+        let costHtml = ``;
+        if (action.cost.point) costHtml += ` P: ${action.cost.point}`;
+        if (action.cost.money) costHtml += ` W: ${action.cost.money.toLocaleString()}`;
+
+        let cooldownHtml = ``;
+        if (remainingCooldown > 0) {
+            cooldownHtml = ` | 쿨타임: ${remainingCooldown}일 남음`;
+            button.disabled = true;
+        }
+
+        if (!canAffordPoints || !canAffordMoney) {
+            button.disabled = true;
+        }
+
+        button.innerHTML = `
+            <div class="action-name">${action.name}</div>
+            <div class="action-desc">${action.description}</div>
+            <div class="action-cost-cooldown">${costHtml.trim()} ${cooldownHtml}</div>
+        `;
+
+        button.onclick = () => {
+            executeAuthorAction(action.id);
+        };
+
+        content.appendChild(button);
+    });
+}
+
+
+// [신규] 작가 행동 모달 표시 함수
+export function showAuthorActionModal() {
+    if (gameState.isRunning && !gameState.isPaused) {
+        pauseGame();
+         const pauseBtn = document.getElementById('pause-toggle-button');
+            if (pauseBtn) {
+                pauseBtn.innerHTML = '<i class="fa-solid fa-play"></i> 이어하기';
+                pauseBtn.classList.add('active');
+            }
+    }
+    renderAuthorActionModal();
+    document.getElementById('author-action-modal').style.display = 'flex';
+}
+
+// [신규] 작가 행동 모달 숨기기 함수
+export function hideAuthorActionModal() {
+    document.getElementById('author-action-modal').style.display = 'none';
+    // 자동으로 게임을 재개하지 않고, 사용자가 직접 '이어하기'를 누르도록 합니다.
 }

@@ -592,44 +592,8 @@ export const randomEvents = [
           latestViewsAbsolutePenalty: 100, // 최근 조회수 -100
           favoriteRate: 0.9               // 즐겨찾기 비율 90%로 감소
         }
-      },
-    
+      }
   
-    // =====================================================
-    // 게임 종료 이벤트
-    // =====================================================
-    {
-      name: "스트레스로 인한 급완결",
-      message: "작품 세계에 운석을 떨어트리고 싶어졌습니다! 모든 것이 무로 돌아가며 이야기는 갑작스럽게 끝을 맺습니다...",
-      chance: 0.001,     // 0.1% 확률
-      duration: 1,       // 1일 지속
-      effect: {
-        isGameEnding: true
-      },
-      endReason: "급완결"
-    },
-  
-    {
-      name: "주화입마로 인한 연재 중단",
-      message: "어느 날 갑자기 작가가 잠적했습니다. 독자들의 기다림 속에서 소설은 미완으로 남게 됩니다.",
-      chance: 0.003,     // 0.3% 확률
-      duration: 1,       // 1일 지속
-      effect: {
-        isGameEnding: true
-      },
-      endReason: "작가 잠적으로 인한 연재 중단"
-    },
-  
-    {
-      name: "해외 출판사 계약",
-      message: "작품의 가능성을 본 해외 대형 출판사에서 거액의 계약을 제안했습니다! 작가는 모든 것을 정리하고 해외로 떠납니다...",
-      chance: 0.001,     // 0.1% 확률
-      duration: 1,       // 1일 지속
-      effect: {
-        isGameEnding: true
-      },
-      endReason: "해외 진출로 인한 조기 완결"
-    }
   ];
 
 // --- END OF FILE RandEvents.js ---

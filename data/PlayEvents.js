@@ -190,7 +190,7 @@ export const playerChoiceEvents = [
             {
                 text: "논란을 정면돌파하고 다음 전개로 증명한다.",
                 effect: () => getProbabilisticOutcome(0.6, {
-                    greatSuccess: { hypeBonus: 0.5, favoritesAbsoluteBonus: 1000, triggerEvent: "플랫폼 메인 노출", resultText: "[대성공] 모두의 예상을 뒤엎는 '역대급' 전개로 모든 논란을 잠재웠습니다! '만신'이 강림했다며 플랫폼이 뒤집어집니다." },
+                    greatSuccess: { hypeBonus: 0.5, favoritesAbsoluteBonus: 1000, triggerEvent: "플랫폼 메인 노출", resultText: "[대성공] 모두의 예상을 뒤엎는 '역대급' 전개로 모든 논란을 잠재웠습니다! '소설의 신'이 강림했다며 플랫폼이 뒤집어집니다." },
                     success: { hypeBonus: 0.3, favoritesAbsoluteBonus: 500, resultText: "[성공] 모두가 다음 화를 주목하는 가운데, '레전드' 전개를 터뜨렸습니다! 논란은 찬사로 바뀌었습니다." },
                     failure: { retentionPenalty: 0.015, favoritesAbsolutePenalty: 600, resultText: "[실패] 다음 전개는 논란을 잠재우지 못했습니다. 실망한 독자들이 대거 이탈합니다." },
                     greatFailure: { isGameEnding: true, endReason: "여론 악화로 인한 연재 중단", resultText: "[대실패] 작가의 고집에 분노한 독자들이 등을 돌리며 연재를 지속할 수 없게 되었습니다." }
@@ -218,7 +218,7 @@ export const playerChoiceEvents = [
             {
                 text: "미래 전개에 대한 애매한 떡밥을 흘린다.",
                 effect: () => getProbabilisticOutcome(0.6, {
-                    greatSuccess: { hypeBonus: 0.3, inflowMultiplier: 1.2, resultText: "[대성공] 교묘하게 던진 떡밥이 '역대급 복선'으로 해석되며 커뮤니티가 불탑니다! '만신'이라며 신규 독자들이 몰려옵니다." },
+                    greatSuccess: { hypeBonus: 0.3, inflowMultiplier: 1.2, resultText: "[대성공] 교묘하게 던진 떡밥이 '역대급 복선'으로 해석되며 커뮤니티가 불탑니다! '소설의 신'이라며 신규 독자들이 몰려옵니다." },
                     success: { hypeBonus: 0.15, inflowMultiplier: 1.1, resultText: "[성공] 던져놓은 떡밥을 두고 독자들이 갑론을박을 벌이며 작품의 하이프와 유입이 증가합니다." },
                     failure: { hypeBonus: -0.1, resultText: "[실패] 바이럴이 너무 뻔해서 '작가가 직접 와서 영업하네'라며 비웃음을 샀습니다. 하이프가 소폭 감소합니다." },
                     greatFailure: { publicAppealScoreBonus: -0.2, triggerEvent: "악성 리뷰 테러", resultText: "[대실패] 실수로 뒷광고 사실을 발각당했습니다! '작가 본인 등판 참사'로 박제되고 악성 리뷰에 시달립니다." }
@@ -566,9 +566,9 @@ export const milestoneEvents = {
         description: "50화 연재! 슬슬 초기 독자들이 피로감을 느낄 시기입니다. 강력한 자극으로 독자들을 붙잡아야 합니다.",
         options: [
             {
-                text: "충격적인 반전을 터뜨려 스토리를 뒤흔든다.",
+                text: "충격적인 반전을 터뜨려 스토리의 맛을 살린다.",
                 effect: () => getProbabilisticOutcome(0.6, {
-                    greatSuccess: { hypeBonus: 0.7, triggerEvent: "커뮤니티 입소문", resultText: "[대성공] 역대급 반전이 커뮤니티를 폭격했습니다! '만신'이라는 찬사와 함께 작품이 전설이 되기 시작합니다!" },
+                    greatSuccess: { hypeBonus: 0.7, triggerEvent: "커뮤니티 입소문", resultText: "[대성공] 역대급 반전이 커뮤니티를 폭격했습니다! '소설의 신'이라는 찬사와 함께 작품이 전설이 되기 시작합니다!" },
                     success: { hypeBonus: 0.5, favoritesAbsoluteBonus: 300, resultText: "[성공] 충격적인 반전이 독자들의 뒤통수를 강타했습니다! 하이프가 폭발합니다!" },
                     failure: { hypeBonus: -0.2, retentionPenalty: 0.01, resultText: "[실패] 지나치게 갑작스러운 반전이 '설정 붕괴'라며 비판받고 있습니다." },
                     greatFailure: { triggerEvent: "캐릭터 붕괴 논란", favoritesAbsolutePenalty: 500, resultText: "[대실패] 반전으로 인해 핵심 캐릭터가 붕괴되었다는 논란이 일며 팬덤이 등을 돌립니다." }

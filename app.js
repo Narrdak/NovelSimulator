@@ -4,12 +4,13 @@
  *       모든 모듈을 가져와 초기화하고, 주요 이벤트 리스너를 설정합니다.
  */
 import { initializeAppData, AppData, saveAppData, gameState } from './state.js';
-import { resetGame, startGame, setSpeed, endGame, closeAuthorHub, openAuthorHub, pauseGame, resumeGame, saveCurrentGame, resumeSavedGame } from './game-controller.js';
+import { resetGame, startGame, setSpeed, endGame, pauseGame, resumeGame, saveCurrentGame, resumeSavedGame } from './game-controller.js';
 import {
     populateTags, addLogMessage, showUpgradeModal, hideUpgradeModal,
     showScreen, hideAllScreens, showWorkListScreen, showChapterInfoModal, hideChapterInfoModal,
     renderAuthorScreen, renderWorkListScreen, renderLeaderboard,
-    getSelectedProfileImage, renderProfileImagePresets, showRestModal, hideRestModal, setupMarquee, showAuthorActionModal, hideAuthorActionModal
+    getSelectedProfileImage, renderProfileImagePresets, showRestModal, hideRestModal, setupMarquee, showAuthorActionModal, hideAuthorActionModal,
+    showAchievementsModal, hideAchievementsModal, closeAuthorHub, openAuthorHub
 } from './ui-manager.js';
 import { createNewAuthor, deleteWork, deleteAuthor, loadGameData } from './storage-manager.js';
 import { takeOneTimeAction, startHomeRest } from './player-controller.js';
@@ -36,6 +37,21 @@ function setupEventListeners() {
     // [신규] 패치노트 화면의 돌아가기 버튼
     document.getElementById('back-to-main-button').addEventListener('click', () => {
         showScreen('main-screen', AppData, gameState);
+    });
+
+    // [신규] 업적 버튼 
+    document.getElementById('close-achievements-modal-button').addEventListener('click', () => {
+        hideAchievementsModal();
+    });
+
+    // [신규] 업적 모달 카테고리 접기/펼치기 이벤트 (이벤트 위임)
+     document.getElementById('achievements-modal').addEventListener('click', (e) => {
+        // 클릭된 요소가 헤더 영역인지 확인
+        const header = e.target.closest('.achievement-category-header');
+        if (header) {
+            // 헤더의 부모인 .achievement-category를 찾아 'collapsed' 클래스를 토글
+            header.parentElement.classList.toggle('collapsed');
+        }
     });
 
     // 작품 정보 접기/펼치기 버튼
@@ -211,35 +227,7 @@ function setupEventListeners() {
         }
     });
 
-    // --- 작가 허브 화면 이벤트 리스너 ---
-    // [수정] hub-actions-container에 이벤트 위임을 사용하여 코드 단순화 (기존 코드)
-    document.getElementById('hub-actions-container').addEventListener('click', (e) => {
-        const targetId = e.target.closest('button')?.id;
-        if (!targetId) return;
 
-        switch (targetId) {
-            case 'hub-btn-rest':
-                showRestModal();
-                break;
-            case 'hub-btn-promote':
-                alert('인터넷 접속 기능은 추후 구현 예정입니다.');
-                break;
-            case 'hub-btn-shop':
-                alert('상점 기능은 추후 구현 예정입니다.');
-                break;
-            case 'hub-btn-inventory':
-                alert('스킬 트리 기능은 추후 구현 예정입니다.');
-                break;
-            case 'hub-btn-leaderboard':
-                renderLeaderboard(AppData.authors);
-                document.getElementById('leaderboard-modal').style.display = 'flex';
-                break;
-                case 'hub-btn-change-author':
-                    closeAuthorHub(AppData, gameState);
-                    showScreen('author-screen', AppData, gameState);
-                    break;
-        }
-    });
 
     document.getElementById('hub-return-button').addEventListener('click', () => closeAuthorHub(AppData, gameState));
 

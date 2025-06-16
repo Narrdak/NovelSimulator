@@ -11,6 +11,9 @@ import { deleteAuthor, loadInProgressGame } from './storage-manager.js';
 import { authorActions } from './data/author-actions.js';
 import { pauseGame } from './game-controller.js';
 import { environmentItems } from './data/EnvironmentItems.js';
+import { achievements } from './data/Achievements.js';
+import { checkAllAchievements } from './achievement-manager.js';
+
 
 let dailyGrowthChart, latestViewsTrendChart;
 let selectedProfileImage = null;
@@ -401,31 +404,45 @@ export function displayAchievements(finalResult, positiveComments, negativeComme
     const monthlyWage = hourlyWage * 120;
     const peakRankValue = getRankValue(peakRanking);
 
-    if (totalViews >= 1000000) unlockedAchievements.push('🏆 밀리언 클럽: 총 조회수 100만 이상');
-    if (totalViews >= 3000000) unlockedAchievements.push('🥉 브론즈 펜슬: 총 조회수 300만 이상');
-    if (totalViews >= 10000000) unlockedAchievements.push('🥈 실버 펜슬: 총 조회수 1000만 이상');
     if (totalViews >= 20000000) unlockedAchievements.push('🥇 골드 펜슬: 총 조회수 2000만 이상');
-    if (positiveComments >= 200) unlockedAchievements.push('👍 선플 좋아요: 긍정적 반응 200회 이상');
-    if (positiveComments >= 300) unlockedAchievements.push('👍 선플 마스터: 긍정적 반응 300회 이상');
-    if (negativeComments >= 200) unlockedAchievements.push('👎 악플 싫어요: 부정적 반응 200회 이상');
-    if (negativeComments >= 300) unlockedAchievements.push('👎 어그로 콜렉터: 부정적 반응 300회 이상');
-    if (totalFavorites >= 10000) unlockedAchievements.push('❤️ 꾸준한 인기작: 총 선호작 1만 달성');
-    if (totalFavorites >= 20000) unlockedAchievements.push('💖 모두의 최애작: 총 선호작 2만 달성');
-    if (totalFavorites >= 30000) unlockedAchievements.push('⭐ 플랫폼의 아이돌: 총 선호작 3만 달성');
-    if (totalFavorites >= 50000) unlockedAchievements.push('⭐ 영원불멸의 전설: 총 선호작 5만 달성');
-    if (peakDailyGrowth >= 10000) unlockedAchievements.push('📈 실시간 급상승: 최고 일일 조회수 1만 달성');
-    if (peakDailyGrowth >= 50000) unlockedAchievements.push('🚀 역주행의 신화: 최고 일일 조회수 5만 달성');
-    if (peakDailyGrowth >= 100000) unlockedAchievements.push('💥 서버 마비의 주범: 최고 일일 조회수 10만 달성');
-    if (peakDailyGrowth >= 200000) unlockedAchievements.push('✈️ 어그로의 신: 최고 일일 조회수 20만 달성');
-    if (totalEvents >= 50) unlockedAchievements.push('🎢 좌충우돌: 총 이벤트 발생 수 50회 이상');
-    if (totalEvents >= 70) unlockedAchievements.push('🎢 사고뭉치: 총 이벤트 발생 수 70회 이상');
-    if (totalEvents >= 100) unlockedAchievements.push('🎢 사건 사고의 신: 총 이벤트 발생 수 100회 이상');
-    if (monthlyWage >= 2000000) unlockedAchievements.push('🍚 그래도 글먹은 했다: 월급 환산 200만 이상');
-    if (monthlyWage >= 5000000) unlockedAchievements.push('🍜 캬~ 든든하다: 월급 환산 500만 이상');
-    if (monthlyWage >= 10000000) unlockedAchievements.push('💰 월천킥 작가: 월급 환산 1000만 이상');
-    if (peakRankValue <= 10) unlockedAchievements.push('⚔️ 실랭 정복자: 최고 실시간 랭킹 10위 이상');
-    if (peakRankValue <= 5) unlockedAchievements.push('👑 실랭 파괴자: 최고 실시간 랭킹 5위 이상');
-    if (peakRankValue === 1) unlockedAchievements.push('⭐ 1등 작가: 최고 실시간 랭킹 1위 달성');
+else if (totalViews >= 10000000) unlockedAchievements.push('🥈 실버 펜슬: 총 조회수 1000만 이상');
+else if (totalViews >= 3000000) unlockedAchievements.push('🥉 브론즈 펜슬: 총 조회수 300만 이상');
+else if (totalViews >= 1000000) unlockedAchievements.push('🏆 밀리언 클럽: 총 조회수 100만 이상');
+
+// 긍정적 반응 업적
+if (positiveComments >= 300) unlockedAchievements.push('👍 선플 마스터: 긍정적 반응 300회 이상');
+else if (positiveComments >= 200) unlockedAchievements.push('👍 선플 좋아요: 긍정적 반응 200회 이상');
+
+// 부정적 반응 업적
+if (negativeComments >= 300) unlockedAchievements.push('👎 어그로 콜렉터: 부정적 반응 300회 이상');
+else if (negativeComments >= 200) unlockedAchievements.push('👎 악플 싫어요: 부정적 반응 200회 이상');
+
+// 선호작 업적
+if (totalFavorites >= 50000) unlockedAchievements.push('⭐ 영원불멸의 전설: 총 선호작 5만 달성');
+else if (totalFavorites >= 30000) unlockedAchievements.push('⭐ 플랫폼의 아이돌: 총 선호작 3만 달성');
+else if (totalFavorites >= 20000) unlockedAchievements.push('💖 모두의 최애작: 총 선호작 2만 달성');
+else if (totalFavorites >= 10000) unlockedAchievements.push('❤️ 꾸준한 인기작: 총 선호작 1만 달성');
+
+// 일일 조회수 업적
+if (peakDailyGrowth >= 200000) unlockedAchievements.push('✈️ 어그로의 신: 최고 일일 조회수 20만 달성');
+else if (peakDailyGrowth >= 100000) unlockedAchievements.push('💥 서버 마비의 주범: 최고 일일 조회수 10만 달성');
+else if (peakDailyGrowth >= 50000) unlockedAchievements.push('🚀 역주행의 신화: 최고 일일 조회수 5만 달성');
+else if (peakDailyGrowth >= 10000) unlockedAchievements.push('📈 실시간 급상승: 최고 일일 조회수 1만 달성');
+
+// 이벤트 발생 수 업적
+if (totalEvents >= 100) unlockedAchievements.push('🎢 사건 사고의 신: 총 이벤트 발생 수 100회 이상');
+else if (totalEvents >= 70) unlockedAchievements.push('🎢 사고뭉치: 총 이벤트 발생 수 70회 이상');
+else if (totalEvents >= 50) unlockedAchievements.push('🎢 좌충우돌: 총 이벤트 발생 수 50회 이상');
+
+// 수익 업적
+if (monthlyWage >= 10000000) unlockedAchievements.push('💰 월천킥 작가: 월급 환산 1000만 이상');
+else if (monthlyWage >= 5000000) unlockedAchievements.push('🍜 캬~ 든든하다: 월급 환산 500만 이상');
+else if (monthlyWage >= 2000000) unlockedAchievements.push('🍚 그래도 글먹은 했다: 월급 환산 200만 이상');
+
+// 랭킹 업적
+if (peakRankValue === 1) unlockedAchievements.push('⭐ 1등 작가: 최고 실시간 랭킹 1위 달성');
+else if (peakRankValue <= 5) unlockedAchievements.push('👑 실랭 파괴자: 최고 실시간 랭킹 5위 이상');
+else if (peakRankValue <= 10) unlockedAchievements.push('⚔️ 실랭 정복자: 최고 실시간 랭킹 10위 이상');
 
     if (unlockedAchievements.length > 0) {
         achievementsList.innerHTML = unlockedAchievements.map(achText => `<div class="achievement-item">${achText}</div>`).join('');
@@ -638,7 +655,7 @@ export function updateMarquee() {
     // 작가 메시지 추가
 
     const devMessages = [
-        "작가쨩 키우기 1.1 : Road to the 월천킥!에 오신 것을 환영합니다!",
+        "작가쨩 키우기 1.2 : Road to the 월천킥!에 오신 것을 환영합니다!",
         "버그나 건의사항은 언제든 피드백 주세요!",
         "당신의 월천킥을 응원합니다!",
         "오늘은 어떤 대작이 탄생할까요?",
@@ -754,9 +771,7 @@ export function renderAuthorHub(appData, gameState) {
     const author = gameState.currentAuthor;
     if (!author) return;
 
-    // [신규] 스테이터스 패널 렌더링
     renderStatusPanel(author);
-
     renderEnvironmentPanel(author);
 
     const actionsContainer = document.getElementById('hub-actions-container');
@@ -771,32 +786,40 @@ export function renderAuthorHub(appData, gameState) {
         document.getElementById('hub-btn-stop-rest').onclick = () => stopHomeRest();
     } else {
         actionsContainer.innerHTML = `
-        <button id="hub-btn-rest" class="btn-primary"><i class="fa-solid fa-bed"></i> 휴식하기 (체력/멘탈 회복)</button>
-        <button id="hub-btn-promote" class="btn-secondary"><i class="fa-solid fa-wifi"></i> 인터넷 접속</button>
-        <button id="hub-btn-shop" class="btn-secondary"><i class="fa-solid fa-cart-shopping"></i> 상점 (아이템 구매)</button>
-        <button id="hub-btn-inventory" class="btn-secondary"><i class="fa-solid fa-sitemap"></i> 스킬 트리</button>
-        <button id="hub-btn-leaderboard" class="btn-primary"><i class="fa-solid fa-crown"></i> 명예의 전당 보기</button>
-        <button id="hub-btn-change-author" class="btn-primary"><i class="fa-solid fa-users"></i> 다른 작가 선택</button>
-    `;
-    document.getElementById('hub-btn-rest').onclick = showRestModal;
-    document.getElementById('hub-btn-promote').onclick = () => alert('인터넷 접속 기능은 추후 구현 예정입니다.');
-    document.getElementById('hub-btn-shop').onclick = () => alert('상점 기능은 추후 구현 예정입니다.');
-    document.getElementById('hub-btn-inventory').onclick = () => alert('스킬 트리 기능은 추후 구현 예정입니다.');
-    document.getElementById('hub-btn-leaderboard').onclick = () => {
-        renderLeaderboard(appData.authors);
-        document.getElementById('leaderboard-modal').style.display = 'flex';
-    };
-    document.getElementById('hub-btn-change-author').onclick = () => {
-        import('./game-controller.js').then(({ closeAuthorHub }) => {
-            closeAuthorHub(appData, gameState);
+            <button id="hub-btn-rest" class="btn-primary"><i class="fa-solid fa-bed"></i> 휴식하기 (체력/멘탈 회복)</button>
+            <button id="hub-btn-achievements" class="btn-primary"><i class="fa-solid fa-star"></i> 업적 확인</button>
+            <button id="hub-btn-shop" class="btn-secondary"><i class="fa-solid fa-cart-shopping"></i> 상점 (아이템 구매)</button>
+            <button id="hub-btn-inventory" class="btn-secondary"><i class="fa-solid fa-sitemap"></i> 스킬 트리</button>
+            <button id="hub-btn-leaderboard" class="btn-primary"><i class="fa-solid fa-crown"></i> 명예의 전당 보기</button>
+            <button id="hub-btn-change-author" class="btn-primary"><i class="fa-solid fa-users"></i> 다른 작가 선택</button>
+        `;
+
+        // [핵심 수정] 버튼을 그린 직후, 각 버튼에 onclick 이벤트를 직접 할당합니다.
+        document.getElementById('hub-btn-rest').onclick = () => {
+            if (gameState.isRunning) {
+                addLogMessage('system', '연재 중에는 휴식을 취할 수 없습니다. 작품 완결 후에 이용해주세요.');
+            } else {
+                showRestModal();
+            }
+        };
+
+        document.getElementById('hub-btn-achievements').onclick = () => {
+            showAchievementsModal(gameState.currentAuthor);
+        };
+
+        document.getElementById('hub-btn-shop').onclick = () => alert('상점 기능은 추후 구현 예정입니다.');
+        document.getElementById('hub-btn-inventory').onclick = () => alert('스킬 트리 기능은 추후 구현 예정입니다.');
+        
+        document.getElementById('hub-btn-leaderboard').onclick = () => {
+            renderLeaderboard(appData.authors);
+            document.getElementById('leaderboard-modal').style.display = 'flex';
+        };
+
+        document.getElementById('hub-btn-change-author').onclick = () => {
+            closeAuthorHub(appData, gameState); // ui-manager 내부의 closeAuthorHub 호출
             showScreen('author-screen', appData, gameState);
-            renderAuthorScreen(appData, gameState);
-        });
-    };
+        };
     }
-
-    
-
 }
 
 function renderEnvironmentPanel(author) {
@@ -1000,4 +1023,115 @@ export function showAuthorActionModal() {
 export function hideAuthorActionModal() {
     document.getElementById('author-action-modal').style.display = 'none';
     // 자동으로 게임을 재개하지 않고, 사용자가 직접 '이어하기'를 누르도록 합니다.
+}
+
+
+
+export function openAuthorHub(appData, gameState) {
+    const currentScreen = getVisibleScreenId();
+    if (currentScreen && currentScreen !== 'author-hub-screen') {
+        gameState.previousScreenId = currentScreen;
+    }
+
+    if (gameState.isRunning && !gameState.isPaused && !gameState.isResting) {
+        pauseGame();
+        addLogMessage('system', '작가 관리를 위해 게임을 일시정지합니다.');
+    }
+    
+    renderAuthorHub(appData, gameState); // 내부에서 renderAuthorHub 호출
+    showScreen('author-hub-screen', appData, gameState);
+    addLogMessage('system', '작가 관리 허브를 열었습니다.');
+}
+
+// 3. closeAuthorHub 함수도 여기에 구현하여 순환 참조를 완전히 끊습니다.
+export function closeAuthorHub(appData, gameState) {
+    showScreen(gameState.previousScreenId, appData, gameState);
+
+    if (gameState.isRunning) {
+        resumeGame();
+    } else {
+        addLogMessage('system', '이전 화면으로 돌아갑니다.');
+    }
+}
+
+export function renderAchievementsModal(author) {
+    checkAllAchievements(author); // 렌더링 직전 최신 정보로 갱신
+
+    const container = document.getElementById('achievements-list-container');
+    const progressSpan = document.getElementById('achievement-progress');
+    container.innerHTML = '';
+
+    const categorized = {};
+    achievements.forEach(ach => {
+        if (!categorized[ach.category]) {
+            categorized[ach.category] = [];
+        }
+        categorized[ach.category].push(ach);
+    });
+
+    let unlockedCount = 0;
+    
+    // [핵심 수정] 카테고리별로 접고 펼 수 있는 구조로 변경
+    for (const categoryName in categorized) {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'achievement-category';
+        
+        // 헤더: 제목 + 토글 버튼
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'achievement-category-header';
+        headerDiv.innerHTML = `
+            <h3 class="achievement-category-title">${categoryName}</h3>
+            <button class="btn-toggle-category"><i class="fa-solid fa-chevron-up"></i></button>
+        `;
+        
+        // 컨텐츠: 업적 목록
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'achievement-category-content';
+
+        categorized[categoryName].forEach(ach => {
+            const achData = author.achievements[ach.id];
+            const isUnlocked = achData?.unlocked;
+            const entryDiv = document.createElement('div');
+            entryDiv.className = `achievement-entry ${isUnlocked ? 'unlocked' : ''}`;
+            
+            let html = `
+                <div class="achievement-header">
+                    <span class="achievement-name">${ach.name}</span>
+                    ${isUnlocked ? `<span class="achievement-date">달성: ${new Date(achData.unlockedAt).toLocaleDateString()}</span>` : ''}
+                </div>
+                <p class="achievement-desc">${ach.description}</p>
+            `;
+
+            if (!isUnlocked) {
+                const progressData = ach.checkCondition(author);
+                const progressPercent = Math.min(100, progressData.progress * 100);
+                html += `
+                    <div class="achievement-progress-bar">
+                        <div class="achievement-progress-fill" style="width: ${progressPercent}%;"></div>
+                    </div>
+                    <div class="achievement-progress-text">${Math.floor(progressData.currentValue).toLocaleString()} / ${progressData.requiredValue.toLocaleString()}</div>
+                `;
+            }
+
+            if (isUnlocked) unlockedCount++;
+
+            entryDiv.innerHTML = html;
+            contentDiv.appendChild(entryDiv); // 컨텐츠 Div에 업적 추가
+        });
+        
+        categoryDiv.appendChild(headerDiv);
+        categoryDiv.appendChild(contentDiv);
+        container.appendChild(categoryDiv);
+    }
+    progressSpan.textContent = `${unlockedCount} / ${achievements.length}`;
+}
+
+export function showAchievementsModal(author) {
+    if (!author) return;
+    renderAchievementsModal(author);
+    document.getElementById('achievements-modal').style.display = 'flex';
+}
+
+export function hideAchievementsModal() {
+    document.getElementById('achievements-modal').style.display = 'none';
 }

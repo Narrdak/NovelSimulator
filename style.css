@@ -1410,3 +1410,108 @@ h3.chart-title, h3.section-title {
 .action-button:disabled .action-cost-cooldown {
     color: var(--red-color);
 }
+
+.achievement-category {
+    margin-bottom: 15px; /* 카테고리 간 간격 살짝 줄임 */
+}
+
+/* [신규] 카테고리 제목과 토글 버튼을 담는 헤더 */
+.achievement-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer; /* 헤더 전체를 클릭 가능하게 */
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 10px;
+}
+
+.achievement-category-title {
+    font-size: 1.2em; /* 크기 살짝 줄임 */
+    color: var(--primary-color);
+    margin: 0;
+    padding: 0;
+    border-bottom: none; /* 헤더에 테두리가 있으므로 중복 제거 */
+}
+
+/* [신규] 카테고리 접기/펼치기 버튼 */
+.btn-toggle-category {
+    background: transparent;
+    border: none;
+    color: var(--subtext-color);
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.btn-toggle-category i {
+    transition: transform 0.3s ease;
+}
+
+/* [신규] 업적 목록을 감싸는 컨테이너 */
+.achievement-category-content {
+    /* 애니메이션을 위한 설정 */
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.achievement-entry {
+    background: var(--widget-bg-alt);
+    padding: 10px 15px; /* 상하 패딩 줄임 */
+    border-radius: 8px;
+    margin-bottom: 8px; /* 항목 간 간격 줄임 */
+    border-left: 4px solid var(--system-color); /* 두께 살짝 줄임 */
+}
+
+.achievement-entry.unlocked {
+    border-left-color: var(--green-color);
+}
+
+.achievement-header {
+    margin-bottom: 6px; /* 헤더와 설명 사이 간격 줄임 */
+}
+
+.achievement-name {
+    font-size: 1.0em; /* 글자 크기 줄임 */
+    font-weight: 700;
+}
+
+.achievement-date {
+    font-size: 0.8em; /* 글자 크기 줄임 */
+}
+
+.achievement-desc {
+    font-size: 0.9em; /* 글자 크기 줄임 */
+    color: var(--subtext-color);
+    margin-bottom: 8px; /* 설명과 진행도 바 사이 간격 줄임 */
+}
+
+/* --- [핵심] 접혔을 때의 스타일 --- */
+.achievement-category.collapsed .achievement-category-content {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+}
+
+.achievement-category.collapsed .btn-toggle-category i {
+    transform: rotate(-90deg);
+}
+
+.achievement-progress-bar {
+    width: 100%;
+    height: 10px;
+    background-color: var(--light-bg);
+    border-radius: 5px;
+    overflow: hidden;
+}
+.achievement-progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+.achievement-progress-text {
+    font-size: 0.8em;
+    text-align: right;
+    color: var(--subtext-color);
+}

@@ -44,6 +44,15 @@ export function loadGameData() {
         if (typeof author.actionCooldowns === 'undefined') {
             author.actionCooldowns = {};
         }
+        if (!author.cumulativeStats) {
+          author.cumulativeStats = {
+              totalViews: 0, totalEarnings: 0, totalFavorites: 0, totalChapters: 0,
+              totalPositiveComments: 0, totalNegativeComments: 0, rankOneFinishes: 0,
+          };
+      }
+      if (!author.achievements) {
+          author.achievements = {};
+      }
         });
       }
 
@@ -172,8 +181,18 @@ export function createNewAuthor(name, bio, profileImage) {
           girlfriend: 0
       },
       authorPoints: 0,
-            actionCooldowns: {}
-    };
+    actionCooldowns: {},
+    cumulativeStats: { // [신규] 누적 스탯
+        totalViews: 0,
+        totalEarnings: 0,
+        totalFavorites: 0,
+        totalChapters: 0,
+        totalPositiveComments: 0,
+        totalNegativeComments: 0,
+        rankOneFinishes: 0,
+    },
+    achievements: {}, // [신규] 업적 데이터
+};
     AppData.authors.push(newAuthor);
     AppData.gameSettings.lastPlayedAuthorId = newAuthor.id;
     

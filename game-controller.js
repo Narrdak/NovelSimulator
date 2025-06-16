@@ -11,6 +11,7 @@ import { calculatePublicAppeal } from './utils.js';
 import { startSimulationLoop, stopSimulationLoop } from './simulation-engine.js';
 import { randomEvents } from './data/RandEvents.js';
 import { saveInProgressGame, loadInProgressGame, deleteInProgressGame } from './storage-manager.js';
+import { checkAllAchievements } from './achievement-manager.js';
 
 
 export function getRandomInt(min, max) {
@@ -257,6 +258,22 @@ export function endGame(reason) {
             authorRef.stats.mental.current = Math.floor(authorRef.stats.mental.max / 2);
         }
 
+        if (!authorRef.cumulativeStats) { // 혹시 모를 예전 데이터 호환
+            authorRef.cumulativeStats = {
+                totalViews: 0, totalEarnings: 0, totalFavorites: 0, totalChapters: 0,
+                totalPositiveComments: 0, totalNegativeComments: 0, rankOneFinishes: 0,
+            };
+        }
+        authorRef.cumulativeStats.totalViews += finalResult.totalViews;
+        authorRef.cumulativeStats.totalEarnings += finalResult.totalEarnings;
+        authorRef.cumulativeStats.totalFavorites += finalResult.totalFavorites;
+        authorRef.cumulativeStats.totalChapters += finalResult.chapters;
+        authorRef.cumulativeStats.totalPositiveComments += finalResult.positiveComments;
+        authorRef.cumulativeStats.totalNegativeComments += finalResult.negativeComments;
+        if (finalResult.peakRanking === '1위') {
+            authorRef.cumulativeStats.rankOneFinishes++;
+        }
+        
         const newWork = {
             id: `work-${Date.now()}`,
             title: gameState.novelTitle,
@@ -267,6 +284,7 @@ export function endGame(reason) {
             finalResult: finalResult
         };
         authorRef.works.push(newWork);
+        checkAllAchievements(authorRef);
         
         saveAppData();
         renderResultModal(newWork, authorRef);
@@ -365,32 +383,7 @@ export function resumeGame() {
     }
 }
 
-export function openAuthorHub(appData, gameState) {
-    const currentScreen = getVisibleScreenId();
-    // [수정] 현재 화면이 허브가 아닐 때만 previousScreenId를 갱신
-    if (currentScreen && currentScreen !== 'author-hub-screen') {
-        gameState.previousScreenId = currentScreen;
-    }
 
-    if (gameState.isRunning && !gameState.isPaused && !gameState.isResting) {
-        pauseGame();
-        addLogMessage('system', '작가 관리를 위해 게임을 일시정지합니다.');
-    }
-    
-    renderAuthorHub(appData, gameState);
-    showScreen('author-hub-screen', appData, gameState);
-    addLogMessage('system', '작가 관리 허브를 열었습니다.');
-}
-
-export function closeAuthorHub(appData, gameState) {
-    showScreen(gameState.previousScreenId, appData, gameState);
-
-    if (gameState.isRunning) {
-        resumeGame();
-    } else {
-        addLogMessage('system', '이전 화면으로 돌아갑니다.');
-    }
-}
 
 export function setSpeed(newMultiplier) {
     gameState.speedMultiplier = newMultiplier;

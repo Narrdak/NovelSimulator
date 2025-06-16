@@ -213,12 +213,36 @@ export function publishNewChapter() {
         addLogMessage('event', `작가의 인기도 덕분에 초기 독자 ${Math.floor(initialBonus)}명이 유입되었습니다!`);
     }
 
-    gameState.narrativeProgress += 8;
+
+    if (gameState.narrativeState === 'climax'){
+        gameState.narrativeProgress += 24;
+    }
+    if (gameState.narrativeState === 'resolution'){
+        gameState.narrativeProgress += 18;
+    }
+    if (gameState.narrativeState === 'build-up'){
+        gameState.narrativeProgress += 14; 
+    }
     if (gameState.narrativeProgress >= 100) {
-        gameState.narrativeProgress = 0;
-        gameState.narrativeCycleCount++;
-        gameState.readerFatigue = Math.max(0, gameState.readerFatigue - 0.05);
-        addLogMessage('system', `에피소드 #${gameState.narrativeCycleCount} 시작! (독자 피로도 감소)`);
+        gameState.narrativeProgress = 0; // 진행도 초기화
+
+        // [핵심 수정] 서사 상태를 다음 단계로 전환
+        switch (gameState.narrativeState) {
+            case 'build-up':
+                gameState.narrativeState = 'climax';
+                addLogMessage('system', `에피소드 #${gameState.narrativeCycleCount}의 절정이 시작됩니다!`);
+                break;
+            case 'climax':
+                gameState.narrativeState = 'resolution';
+                addLogMessage('system', `에피소드 #${gameState.narrativeCycleCount}의 마무리에 돌입합니다.`);
+                break;
+            case 'resolution':
+                gameState.narrativeState = 'build-up';
+                gameState.narrativeCycleCount++;
+                gameState.readerFatigue = Math.max(0, gameState.readerFatigue - 0.05); // 피로도는 새 에피소드 시작 시 감소
+                addLogMessage('system', `새로운 에피소드 #${gameState.narrativeCycleCount}가 시작됩니다! (독자 피로도 감소)`);
+                break;
+        }
     }
 
     handleRandomEvents();

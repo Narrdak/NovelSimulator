@@ -545,6 +545,12 @@ h3.chart-title, h3.section-title {
         width: 100%;
         justify-content: center;
     }
+    
+    /* [신규] 모바일 화면에서 스탯 그리드 레이아웃 조정 */
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr); /* 3열로 고정 */
+        gap: 8px; /* 간격 살짝 줄임 */
+    }
 }
 
 /* --- Phase 2 CSS --- */

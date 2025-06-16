@@ -16,7 +16,7 @@ let dailyGrowthChart, latestViewsTrendChart;
 let selectedProfileImage = null;
 let marqueeInterval = null;
 
-export const allScreens = ['main-screen','author-screen', 'work-list-screen', 'work-creation-screen', 'simulation-screen', 'author-hub-screen'];
+export const allScreens = ['main-screen','author-screen', 'work-list-screen', 'work-creation-screen', 'simulation-screen', 'author-hub-screen', 'patch-notes-screen'];
 
 export function hideAllScreens() {
     allScreens.forEach(id => {
@@ -580,10 +580,21 @@ export function updateAuthorStatsDisplay(appData, gameState) {
     const r = (v) => Math.round(v);
 
     // 사이드바에 '작가 관리' 버튼 추가
-    sidebarActions.innerHTML = `
-        <button id="sidebar-hub-button" class="btn-primary">
-            <i class="fa-solid fa-user-gear"></i> 작가 관리 허브
-        </button>`;
+    const currentScreenId = getVisibleScreenId();
+
+    if (currentScreenId === 'author-hub-screen') {
+        // 허브 화면일 경우 '돌아가기' 버튼 표시
+        sidebarActions.innerHTML = `
+            <button id="sidebar-return-button" class="btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> 이전 화면으로 돌아가기
+            </button>`;
+    } else {
+        // 다른 모든 화면에서는 '작가 관리 허브' 버튼 표시
+        sidebarActions.innerHTML = `
+            <button id="sidebar-hub-button" class="btn-primary">
+                <i class="fa-solid fa-user-gear"></i> 작가 관리 허브
+            </button>`;
+    }
     
     // 작가 프로필 업데이트
     document.getElementById('header-author-img').src = profileImage;
@@ -627,7 +638,7 @@ export function updateMarquee() {
     // 작가 메시지 추가
 
     const devMessages = [
-        "작가쨩 키우기 1.0 : Road to the 월천킥!에 오신 것을 환영합니다!",
+        "작가쨩 키우기 1.1 : Road to the 월천킥!에 오신 것을 환영합니다!",
         "버그나 건의사항은 언제든 피드백 주세요!",
         "당신의 월천킥을 응원합니다!",
         "오늘은 어떤 대작이 탄생할까요?",

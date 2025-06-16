@@ -20,7 +20,7 @@ function init() {
     showScreen('main-screen', AppData, gameState);
     populateTags();
     setupEventListeners();
-    addLogMessage('system', '작가쨩 키우기 1.0 버전에 오신 것을 환영합니다! 이 게임은 대롱닥이 만들었습니다롱!');
+    addLogMessage('system', '작가쨩 키우기 1.1 버전에 오신 것을 환영합니다! 이 게임은 대롱닥이 만들었습니다롱!');
     setupMarquee(); // 전광판 초기화
 }
 
@@ -28,9 +28,14 @@ function init() {
  * 게임의 주요 UI 요소에 이벤트 리스너를 설정합니다.
  */
 function setupEventListeners() {
-    // 메인 인트로 버튼
-    document.getElementById('intro-start-button').addEventListener('click', () => {
-        showScreen('author-screen', AppData, gameState);
+    // [수정] 메인 화면의 패치노트 버튼
+    document.getElementById('show-patch-notes-button').addEventListener('click', () => {
+        showScreen('patch-notes-screen', AppData, gameState);
+    });
+
+    // [신규] 패치노트 화면의 돌아가기 버튼
+    document.getElementById('back-to-main-button').addEventListener('click', () => {
+        showScreen('main-screen', AppData, gameState);
     });
 
     // 작품 정보 접기/펼치기 버튼
@@ -85,8 +90,14 @@ function setupEventListeners() {
     
     // 사이드바에 이벤트 위임 방식으로 '작가 관리 허브' 버튼 리스너 추가
     document.getElementById('log-sidebar').addEventListener('click', (e) => {
-        if (e.target && e.target.id === 'sidebar-hub-button') {
+        const button = e.target.closest('button');
+        if (!button) return;
+
+        if (button.id === 'sidebar-hub-button') {
             openAuthorHub(AppData, gameState);
+        } else if (button.id === 'sidebar-return-button') {
+            // game-controller에서 closeAuthorHub를 가져와야 합니다.
+            closeAuthorHub(AppData, gameState);
         }
     });
 

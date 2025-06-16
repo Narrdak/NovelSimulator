@@ -22,6 +22,10 @@ function getRandomFluctuation() {
     return 0.9 + Math.random() * 0.2; // 0.9에서 1.1 사이의 값
 }
 
+function getRandomFluctuation2() {
+    return 0.8 + Math.random() * 0.4; // 0.9에서 1.1 사이의 값
+}
+
 export function startSimulationLoop() {
     stopSimulationLoop();
     if (gameState.isRunning && !gameState.isPaused) {
@@ -133,8 +137,8 @@ export function publishNewChapter() {
          }
  
          if (gameState.chapter % 50 === 0) {
-             const baseChance = 0.10;
-             const additionalChance = Math.floor((gameState.chapter - 200) / 50) * 0.05;
+             const baseChance = 0.05;
+             const additionalChance = Math.floor((gameState.chapter - 200) / 50) * 0.025;
              const finalChance = baseChance + additionalChance;
              
              if (Math.random() < finalChance) {
@@ -321,7 +325,19 @@ export function updateTick() {
     const potentialSkillModifier = calculateStatModifier(authorStats.potentialSkill?.current || 0, 0, 100, 50, 0.5, 2.0);
     const BASE_GUARANTEED_INFLOW = 2;
     const guaranteedInflow = BASE_GUARANTEED_INFLOW * potentialSkillModifier;
-    const baseInflow = 8;
+    
+    // [수정] 회차에 따른 기본 유입량(baseInflow) 차등 적용
+    let baseInflow;
+    const chapter = gameState.chapter;
+    if (chapter <= 50)       { baseInflow = 12; }
+    else if (chapter <= 100) { baseInflow = 10; }
+    else if (chapter <= 150) { baseInflow = 8; }
+    else if (chapter <= 200) { baseInflow = 7; }
+    else if (chapter <= 250) { baseInflow = 6; }
+    else if (chapter <= 300) { baseInflow = 5; }
+    else if (chapter <= 500) { baseInflow = 4; }
+    else                     { baseInflow = 3; }
+
     gameState.inflowMultiplierModifier = 1.0;
     const finalInflowMultiplier = eventEffects.inflowMultiplier * gameState.inflowMultiplierModifier * trollingSkillModifier * gameState.latestChapterHype;
     const writingQualityBonus = (authorStats.writingSkill?.current || 0) * 0.002;
@@ -337,8 +353,15 @@ export function updateTick() {
     let matchedSubTagsCount = gameState.subTags.filter(tag => gameState.currentTrend.subs.includes(tag)).length;
     trendMultiplier += matchedSubTagsCount * 0.05;
 
-    let newReaders = (baseInflow * (gameState.publicAppealScore * finalAppealMultiplier * trendMultiplier) * finalInflowMultiplier * (1 + writingQualityBonus)) + guaranteedInflow;
-    newReaders *= getRandomFluctuation();
+    // [신규] 연차별 publicAppealScore 상한선 계산 로직
+    const currentYear = gameState.date.getFullYear();
+    const startYear = gameState.startDate.getFullYear();
+    const yearsPassed = Math.max(0, currentYear - startYear);
+    const yearBasedCap = Math.min(10, 2.5 + (yearsPassed * 0.5)); // 2019년(0년차) 2.5, 매년 0.5씩 증가, 최대 10
+    const cappedPublicAppealScore = Math.min(gameState.publicAppealScore, yearBasedCap);
+
+    let newReaders = (baseInflow * (cappedPublicAppealScore * finalAppealMultiplier * trendMultiplier) * finalInflowMultiplier * (1 + writingQualityBonus)) + guaranteedInflow;
+    newReaders *= getRandomFluctuation2();
     
     
     // =================================================================
